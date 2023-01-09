@@ -14,18 +14,19 @@ class TokenizerClass():
     def run(self):
         pass
 
-    def decode_sequence(sequence):
+    def decode_sequence(self, sequence):
         return " ".join([self.tokenizer.reverse_word_index.get(idx, "?") for idx in sequence])
 
-    def fit_tokenizer_on_train(self, train_sentence_list: list(str)) -> int:
-        self.tokenizer(num_words=self.num_unique_words)
-        self.tokenizer.fit_on_texts(train_sentence_list)
-        pass
+    def fit_tokenizer_on_train(self, train_sentence_list: list[str]) -> int:
+        self.tokenizer = self.tokenizer(num_words=self.num_unique_words)
+        self.tokenizer.fit_on_texts(texts=train_sentence_list)
+        return self.num_unique_words
 
-    def set_unique_words(self, sentence_list: list(str)) -> int:
+    def set_unique_words(self, sentence_list: list[str]) -> int:
         counter = counter_word(sentence_list)
         self.num_unique_words = len(counter)
+        return self.num_unique_words
 
     def remove_stopwords_series(self, sentence_list: pd.Series) -> pd.Series:
-        cleaned_sentence_list = sentence_list.text.map(remove_stopwords)
+        cleaned_sentence_list = sentence_list.map(remove_stopwords)
         return cleaned_sentence_list
