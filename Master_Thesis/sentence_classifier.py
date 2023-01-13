@@ -1,4 +1,4 @@
-from typing import List
+import datetime
 
 from keras.callbacks import EarlyStopping
 from tensorflow import keras
@@ -8,6 +8,8 @@ from tensorflow.keras.preprocessing.text import Tokenizer
 
 from tokenizer_class import TokenizerClass
 from utils import *
+
+#TODO: Funnktion die sich join zwischen POS von claim & nonclaim anschaut und die matches aus nonclaim rauslöscht
 
 
 class SentenceClassifier():
@@ -52,11 +54,16 @@ class SentenceClassifier():
         return padded_list
 
     def predict_target(self, text_list) -> list[bool]:
-        self.test_data = text_list
+        self.test_data = list(text_list)
         test_padded = self.raw_text_to_padded_sequences(self.test_data)
-        self.test_prediction = self.model.predict(test_padded)
+        self.test_prediction = list(self.model.predict(test_padded))
 
         return self.test_prediction
+
+    def save_current_test_as_csv(self):
+        now = datetime.datetime.now()
+        df_to_store = pd.DataFrame({'text': self.test_data, 'prediction': self.test_prediction})
+        df_to_store.to_csv("results_" + str(self.model) + str(now.hour) + str(now.minute))
 
     def default_model(self):
 
@@ -88,16 +95,6 @@ class SentenceClassifier():
                        **kwargs)
         pass
 
-    def add_keras_layer(self):
-        pass
-
-    def run_training(self):
-        pass
-
     def split_val_train(self, df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
         train_df, val_df = split_train_test(df, self.test_share)
         return train_df, val_df
-
-    def tokenize_data(self, train_list: list[str],
-                      val_list: list[str]) -> tuple[list[int], list[int]]:
-        pass
