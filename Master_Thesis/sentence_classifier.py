@@ -23,9 +23,13 @@ class SentenceClassifier():
         self.tokenizer_class = tokenizer_class
         self.test_share = test_share
         self.whole_df = df
-        self.train_df = pd.DataFrame
-        self.test_df = pd.DataFrame
-        self.val_df = pd.DataFrame
+        self.train_df = pd.DataFrame({
+            'text': pd.Series(dtype='str'),
+            'target': pd.Series(dtype='bool'),
+            'padded': pd.Series(dtype='object')
+        })
+        self.test_df = self.train_df.copy()
+        self.val_df = self.train_df.copy()
         self.unique_words = 0
         self.text_column = text_column
         self.padding_length = padding_length
@@ -38,38 +42,26 @@ class SentenceClassifier():
         self.tokenizer_class.set_unique_words(self.whole_df[text_column])
         self.train_df, self.val_df = self.split_val_train(self.whole_df)
         self.tokenizer_class.fit_tokenizer_on_train(self.train_df[text_column].tolist())
-        self.train_df["padded"] = self.raw_text_to_padded_sequences(self.train_df["text"])
-        self.val_df["padded"] = self.raw_text_to_padded_sequences(self.val_df["text"])
+        self.train_padded = self.raw_text_to_padded_sequences(self.train_df[text_column])
+        self.val_padded = self.raw_text_to_padded_sequences(self.val_df[text_column])
         return self.train_df, self.val_df
 
-        # self.train_df["sequences"] = self.tokenizer_class.tokenizer.texts_to_sequences(
-        #     self.train_df[text_column])
-        # self.val_df["sequences"] = self.tokenizer_class.tokenizer.texts_to_sequences(
-        #     self.val_df[text_column])
-        # self.train_df["padded"] = pad_sequences(self.train_df["sequences"],
-        #                                         maxlen=self.padding_length,
-        #                                         padding="post",
-        #                                         truncating="post")
-        # self.val_df["padded"] = pad_sequences(self.val_df["sequences"],
-        #                                       maxlen=self.padding_length,
-        #                                       padding="post",
-        #                                       truncating="post")
-
-        #TODO Option to pass specific padder
-    def raw_text_to_padded_sequences(self, text_list):
-        sequences_list = self.tokenizer_class.tokenizer.texts_to_sequences(text_list)
-        padded_list = pad_sequences(sequences_list)
+    def raw_text_to_padded_sequences(self, text_list) -> pd.Series:
+        sequence_list = self.tokenizer_class.tokenizer.texts_to_sequences(text_list)
+        padded_list = pad_sequences(sequence_list, maxlen=32, padding="post", truncating="post")
         return padded_list
 
-    def predict_target(self, test_df, test_text_column='text') -> list[bool]:
-        test_df["padded"] = self.raw_text_to_padded_sequences(test_df[test_text_column])
-        test_df["predictions"] = self.model.predict(test_df["padded"])
+    def predict_target(self, text_list) -> list[bool]:
+        self.test_data = text_list
+        test_padded = self.raw_text_to_padded_sequences(self.test_data)
+        self.test_prediction = self.model.predict(test_padded)
 
-        return test_df
+        return self.test_prediction
 
     def default_model(self):
+
         model = keras.models.Sequential()
-        model.add(layers.Embedding(self.unique_words, 32, input_length=32))
+        model.add(layers.Embedding(self.tokenizer_class.num_unique_words, 32, input_length=32))
         # The layer will take as input an integer matrix of size (batch, input_length),
         # and the largest integer (i.e. word index) in the input should be no larger than num_words (vocabulary size).
         # Now model.output_shape is (None, input_length, 32), where `None` is the batch dimension.
@@ -87,10 +79,12 @@ class SentenceClassifier():
     def train_model(self, kwargs={"epochs": 20}):
         if (self.model == "Default"):
             self.model = self.default_model()
+        es = EarlyStopping('val_loss', mode='min', verbose=1, patience=2)
         self.model.summary()
-        self.model.fit(self.train_df["padded"],
+        self.model.fit(self.train_padded,
                        self.train_df["target"],
-                       validation_data=(self.val_df["padded"], self.val_df["target"]),
+                       validation_data=(self.val_padded, self.val_df["target"]),
+                       callbacks=[es],
                        **kwargs)
         pass
 
