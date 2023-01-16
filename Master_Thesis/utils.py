@@ -42,7 +42,7 @@ def fetch_rawtext_from_wiki(subject='Maschinelles Lernen') -> str:
 
 
 def preprocess_classify_wiki_text(wiki_raw_text: str) -> pd.DataFrame:
-    """Transforms raw_tet wiki article into df with sentences and 
+    """Transforms raw_text wiki article into df with sentences and 
     their is_claim label, based on citation
 
     Args:
@@ -70,9 +70,11 @@ def preprocess_classify_wiki_text(wiki_raw_text: str) -> pd.DataFrame:
     df["target"] = is_claim
     return df
 
-def split_val_train( df: pd.DataFrame,test_share=0.1) -> tuple[pd.DataFrame, pd.DataFrame]:
+
+def split_val_train(df: pd.DataFrame, test_share=0.1) -> tuple[pd.DataFrame, pd.DataFrame]:
     train_df, val_df = split_train_test(df, test_share)
     return train_df, val_df
+
 
 def label_wiki_sentences(sen_text: list[str]) -> pd.DataFrame:
     """Labels preprocessed sentences (wiki article) as claim or non-claim, based on 
@@ -82,7 +84,7 @@ def label_wiki_sentences(sen_text: list[str]) -> pd.DataFrame:
         sen_text (list): list of preprocessed sentences of wiki articles 
 
     Returns:
-        pd.DataFrame: Sentences with label
+        pd.DataFrame: Sentences ["text"] with label ["target"]
     """
     is_claim = []
     for i in sen_text:
@@ -112,7 +114,7 @@ def split_text(text: str) -> list:
     return sen_text
 
 
-def split_train_test(df, test_size=.10)->pd.DataFrame:
+def split_train_test(df, test_size=.10) -> pd.DataFrame:
     """Splits df into train-test-dfs. Default 10% test.
 
     Args:
