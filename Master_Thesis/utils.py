@@ -68,9 +68,11 @@ def preprocess_classify_wiki_text(wiki_raw_text: str) -> pd.DataFrame:
     df = pd.DataFrame()
     df["text"] = sen_text
     df["target"] = is_claim
-
     return df
 
+def split_val_train( df: pd.DataFrame,test_share=0.1) -> tuple[pd.DataFrame, pd.DataFrame]:
+    train_df, val_df = split_train_test(df, test_share)
+    return train_df, val_df
 
 def label_wiki_sentences(sen_text: list[str]) -> pd.DataFrame:
     """Labels preprocessed sentences (wiki article) as claim or non-claim, based on 
@@ -110,7 +112,7 @@ def split_text(text: str) -> list:
     return sen_text
 
 
-def split_train_test(df, test_size=.10):
+def split_train_test(df, test_size=.10)->pd.DataFrame:
     """Splits df into train-test-dfs. Default 10% test.
 
     Args:
