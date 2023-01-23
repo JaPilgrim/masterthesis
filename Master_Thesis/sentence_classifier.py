@@ -36,7 +36,7 @@ class SentenceClassifier():
         self.test_df = self.train_df.copy()
         self.val_df = self.train_df.copy()
 
-    def preprocess_train_val(self,df,text_column="text"):
+    def preprocess_train_val(self, df, text_column="text"):
         """Orchestrates run from Whole df to preprocessed train & val dataset
 
         Args:
@@ -55,7 +55,7 @@ class SentenceClassifier():
         self.val_padded = self.raw_text_to_padded_sequences(self.val_df[text_column])
         return self.train_df, self.val_df
 
-    def raw_text_to_padded_sequences(self, text_list:list[str]) -> list:
+    def raw_text_to_padded_sequences(self, text_list: list[str]) -> list:
         """With tokenizer transforms list of raw text to list of padded sentences (list of ints)
 
         Args:
@@ -68,7 +68,7 @@ class SentenceClassifier():
         padded_list = pad_sequences(sequence_list, maxlen=32, padding="post", truncating="post")
         return padded_list
 
-    def predict_target(self, text_list:list[str]) -> list[bool]:
+    def predict_target(self, text_list: list[str]) -> list[bool]:
         """Predits the target column. Stores test data & predictino to self.
 
         Args:
@@ -91,7 +91,6 @@ class SentenceClassifier():
 
     def save_test_data_as_csv(self):
         now = datetime.datetime.now()
-
 
     def default_model(self):
 
