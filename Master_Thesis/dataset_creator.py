@@ -27,3 +27,4 @@ class DatasetCreator():
         self.df = preprocess_classify_wiki_text(text)
         return self.df
         
+    
