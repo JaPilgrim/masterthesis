@@ -60,6 +60,8 @@ def preprocess_classify_wiki_text(wiki_raw_text: str) -> pd.DataFrame:
         newtext = newtext.replace("._", ".")
         i += 1
     sen_text = split_text(newtext)
+
+
     is_claim = []
     for i in sen_text:
         if "_" in i:
@@ -102,6 +104,7 @@ def label_wiki_sentences(sen_text: list[str]) -> pd.DataFrame:
             is_claim.append(True)
         else:
             is_claim.append(False)
+            
     df = pd.DataFrame()
     df["text"] = sen_text
     df["target"] = is_claim
@@ -123,8 +126,10 @@ def split_text(text: str) -> list:
     new_text = re.sub('\!', '\.', new_text)
     new_text = re.sub('\?', '\?.', new_text)
     new_text = new_text.strip()
+    new_text = new_text.replace('\r', '')
+    new_text = new_text.replace('\n', ' ')
     sen_text = new_text.split(". ")
-    
+
     return sen_text
 
 
@@ -142,7 +147,7 @@ def split_train_test(df, test_size=.10) -> pd.DataFrame:
     return train_df, test_df
 
 
-def remove_stopwords(text:str, stopwords=stopwords.words("german"))->str:
+def remove_stopwords(text: str, stopwords=stopwords.words("german")) -> str:
     stop = set(stopwords)
     filtered_words = [word.lower() for word in text.split() if word.lower() not in stop]
     return " ".join(filtered_words)
@@ -191,7 +196,7 @@ def draw_proportional_randomsample_from_FANG_df(df_full, total_number_sentences=
     return total_sentence_list
 
 
-def fetch_full_FANG_dataset()->pd.DataFrame:
+def fetch_full_FANG_dataset() -> pd.DataFrame:
     """Fetches all FANG data into one DF. Depends on hardcoded local location!
 
     Returns:
