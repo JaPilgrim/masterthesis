@@ -17,6 +17,34 @@ from collections import Counter
 from nltk.corpus import stopwords
 
 
+def create_abbreviation_dict() -> dict:
+    """Initialises a default abbreviation dict.
+
+    Returns:
+        dict: Keys: Abbreviation - Values: Full Text
+    """
+    abbr_to_text = {
+        'a. D.': '',
+        'a. d.': 'an der',
+        'Abb.': 'Abbildung',
+        'bzw.': 'beziehungsweise',
+        'ca.': 'circa',
+        'cf.': 'confer',
+        'd. h.': 'das heisst',
+        'Dr.': 'Doktor',
+        'etc.': 'et cetera',
+        'ggf.': 'gegebenenfalls',
+        'i.d.R.': 'in der Regel',
+        'i.A.': 'im Allgemeinen',
+        'Ph.D.': 'Doctor of Philosophy',
+        'usw.': 'und so weiter',
+        'v.a.': 'vor allem',
+        'z. B.': 'zum Beispiel',
+        'z. T.': 'zum Teil',
+    }
+    return abbr_to_text
+
+
 def fetch_rawtext_from_wiki(subject='Maschinelles Lernen') -> str:
     """Fetches Raw Text from specified Wiki article
 
@@ -59,15 +87,9 @@ def preprocess_classify_wiki_text(wiki_raw_text: str) -> pd.DataFrame:
     while i < 1:
         newtext = newtext.replace("._", ".")
         i += 1
-    sen_text = split_text(newtext)
-
-
-    is_claim = []
-    for i in sen_text:
-        if "_" in i:
-            is_claim.append(True)
-        else:
-            is_claim.append(False)
+    new_text = clean_special_characters(newtext)
+    sen_text = new_text.split(". ")
+    is_claim = label_wiki_sentences(sen_text)
     df = pd.DataFrame()
     df["text"] = sen_text
     df["target"] = is_claim
@@ -88,9 +110,9 @@ def split_val_train(df: pd.DataFrame, test_share=0.1) -> tuple[pd.DataFrame, pd.
     return train_df, val_df
 
 
-def label_wiki_sentences(sen_text: list[str]) -> pd.DataFrame:
-    """Labels preprocessed sentences (wiki article) as claim or non-claim, based on 
-    if they contain an underscore
+def label_wiki_sentences(sen_text: list[str]) -> list[str]:
+    """Labels preprocessed sentence list (wiki article) as claim or non-claim, based on 
+    if they contain an underscore. Removes underscore afterwards
 
     Args:
         sen_text (list): list of preprocessed sentences of wiki articles 
@@ -99,28 +121,31 @@ def label_wiki_sentences(sen_text: list[str]) -> pd.DataFrame:
         pd.DataFrame: Sentences ["text"] with label ["target"]
     """
     is_claim = []
-    for i in sen_text:
-        if "_" in i:
+    for i in range(len(sen_text)):
+        if "_" in sen_text[i]:
+            sen_text[i] = sen_text[i].replace('_', '')
             is_claim.append(True)
         else:
             is_claim.append(False)
-            
-    df = pd.DataFrame()
-    df["text"] = sen_text
-    df["target"] = is_claim
 
-    return df
+    return is_claim
 
 
-def split_text(text: str) -> list:
-    """Splits text into sentences. Does so by removing all points next to numbers, 
-    than splitting on full-stops
+def clean_special_characters(text: str) -> str:
+    """Returns cleaned text. Does so by:
+
+    1. removing all points next to numbers,  
+    2. Making ! to . full stop
+    3. Making ? to ?.
+    4. Strip()ing leading/trailing whitespaces
+    5. Deleting \r
+    6. Replacing \n with space
 
     Args:
         text (str): Raw text of any kind
 
     Returns:
-        list: list of sentences.
+        str: cleaned text.
     """
     new_text = re.sub("[0-9]\.", "", text)
     new_text = re.sub('\!', '\.', new_text)
@@ -128,9 +153,24 @@ def split_text(text: str) -> list:
     new_text = new_text.strip()
     new_text = new_text.replace('\r', '')
     new_text = new_text.replace('\n', ' ')
-    sen_text = new_text.split(". ")
 
-    return sen_text
+    return new_text
+
+
+def replace_abbreviations(text, replace_dict=create_abbreviation_dict()):
+    """Replace abbreviations (dictionary keys) with full words (dictionary values). Default is a 
+    short abbreviation list.
+
+    Args:
+        text (str): Text where Abbrv. should be removed
+        replace_dict (_type_, optional): Dictionary to be used. Defaults create_abbreviation_dict()
+
+    Returns:
+        _type_: Text with replaced Abbreviations.
+    """
+    words = text.split()
+    new_words = [replace_dict.get(word, word) for word in words]
+    return " ".join(new_words)
 
 
 def split_train_test(df, test_size=.10) -> pd.DataFrame:
@@ -181,19 +221,50 @@ def draw_proportional_randomsample_from_FANG_df(df_full, total_number_sentences=
     total_sentence_list = []
     sentence_fraction = total_number_sentences / len(df_full)
     for verlag in verlage_aggr.index:
-        verlag_total_sentence_list = []
-        print(verlag)
-        verlag_number_sentences = math.ceil(verlage_aggr.loc[verlag, 'label'] * sentence_fraction)
-        print(verlag_number_sentences)
-        verlag_article_list = df_full[df_full.source == verlag]['article'].reset_index(drop=True)
-        for article in verlag_article_list:
-            articles_sentence_list = []
-            articles_sentence_list = split_text(article)
-            verlag_total_sentence_list = verlag_total_sentence_list + articles_sentence_list
-        verlag_random_selection = random.sample(verlag_total_sentence_list, verlag_number_sentences)
-        total_sentence_list = total_sentence_list + verlag_random_selection
-
+        total_sentence_list = total_sentence_list + get_random_sentences_verlag(
+            df_full, verlage_aggr, sentence_fraction, verlag)
     return total_sentence_list
+
+
+def get_random_sentences_verlag(df_full, verlage_aggr, sentence_fraction, verlag):
+    """Gets a fraction (specified in params) of random sentences from all articles of a verlag. Therefore iterates
+    over all articles.
+
+
+    Args:
+        df_full (_type_): _description_
+        verlage_aggr (_type_): _description_
+        sentence_fraction (_type_): _description_
+        verlag (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+    verlag_total_sentence_list = []
+    print(verlag)
+    verlag_number_sentences = math.ceil(verlage_aggr.loc[verlag, 'label'] * sentence_fraction)
+    print(verlag_number_sentences)
+    verlag_article_list = df_full[df_full.source == verlag]['article'].reset_index(drop=True)
+    for article in verlag_article_list:
+        verlag_total_sentence_list = verlag_total_sentence_list + get_sentences_article(article)
+    verlag_random_selection = random.sample(verlag_total_sentence_list, verlag_number_sentences)
+    return verlag_random_selection
+
+
+def get_sentences_article(article: str) -> list:
+    """Gets all cleaned sentences from article raw-text.
+
+    Args:
+        article (str): Raw-Text of an article
+
+    Returns:
+        list: List of all sentences in an article.
+    """
+    articles_sentence_list = []
+    article = replace_abbreviations(article)
+    cleaned_article = clean_special_characters(article)
+    articles_sentence_list = cleaned_article.split('. ')
+    return articles_sentence_list
 
 
 def fetch_full_FANG_dataset() -> pd.DataFrame:
@@ -256,14 +327,3 @@ def fetch_from_fangcovid_local(how_many_articles: int, seed=5) -> str:
     finally:
         os.chdir(save)
     return concat_article_text
-
-
-# def fetch_from_fangcovid_remote(number: int):
-#     json_list = sample(range(1, 40000), number)
-#     df = pd.read_csv(
-#         "https://github.com/justusmattern/fang-covid/blob/main/articles/0.json?raw=true")
-#     # for i in json_list:
-#     #     url="https://github.com/justusmattern/fang-covid/tree/main/articles"
-#     return df
-# vectorize a text corpus by turning each text into a sequence of integers
-# fit only to training
