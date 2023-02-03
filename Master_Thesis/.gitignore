@@ -1,2 +1,13 @@
 *.DS_store
 data/.**
+data/
+
+../againlonelypy
+
+# Ignore Logs
+logs
+*.log
+
+# Ignore the build directory
+/dist
+
