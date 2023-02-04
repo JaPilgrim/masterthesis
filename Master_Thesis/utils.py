@@ -37,6 +37,8 @@ def create_abbreviation_dict() -> dict:
         'i.d.R.': 'in der Regel',
         'i.A.': 'im Allgemeinen',
         'Ph.D.': 'Doctor of Philosophy',
+        'Prof.': 'Professor',
+        'prof.': 'Professor',
         'usw.': 'und so weiter',
         'v.a.': 'vor allem',
         'z. B.': 'zum Beispiel',
@@ -275,7 +277,7 @@ def fetch_full_FANG_dataset() -> pd.DataFrame:
     """
     df_list = []
     save = os.getcwd()
-    os.chdir("/Users/jannis/Desktop/fang-covid-main/articles/")
+    os.chdir('/Users/jannis/Desktop/GitRepos/Master/masterthesis/Master_Thesis/data/fang-covid-main/articles')
     json_list = (range(1, 41241))
     try:
         for i in json_list:
@@ -311,7 +313,7 @@ def fetch_from_fangcovid_local(how_many_articles: int, seed=5) -> str:
     concat_article_text = ""
     save = os.getcwd()
     try:
-        os.chdir("/Users/jannis/Desktop/fang-covid-main/articles/")
+        os.chdir('/Users/jannis/Desktop/fang-covid-main/articles/')
         json_list = sample(range(1, 40000), how_many_articles)
         for i in json_list:
             try:

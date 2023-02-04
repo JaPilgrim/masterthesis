@@ -26,5 +26,4 @@ class DatasetCreator():
             text = text + raw
         self.df = preprocess_classify_wiki_text(text)
         return self.df
-        
     

@@ -5,7 +5,6 @@ from tensorflow import keras
 from tensorflow.keras import callbacks, layers
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.preprocessing.text import Tokenizer
-
 from tokenizer_class import TokenizerClass
 from utils import *
 
@@ -45,7 +44,7 @@ class SentenceClassifier():
         Returns:
             _type_: _description_
         """
-        self.whole_df = df
+        self.whole_df = self.downsample_dataframe_classdist(df)
         self.whole_df[text_column] = self.tokenizer_class.remove_stopwords_series(
             self.whole_df[text_column])
         self.tokenizer_class.set_unique_words(self.whole_df[text_column])
@@ -54,6 +53,15 @@ class SentenceClassifier():
         self.train_padded = self.raw_text_to_padded_sequences(self.train_df[text_column])
         self.val_padded = self.raw_text_to_padded_sequences(self.val_df[text_column])
         return self.train_df, self.val_df
+
+    def downsample_dataframe_classdist(self, df, target_column='target'):
+        df_true = df[df[target_column] == True]
+        df_false = df[df[target_column] == False]
+        min_length = min(len(df_true), len(df_false))
+        df_true = df_true.sample(min_length)
+        df_false = df_false.sample(min_length)
+        df = pd.concat([df_true, df_false], ignore_index=True)
+        return df
 
     def raw_text_to_padded_sequences(self, text_list: list[str]) -> list:
         """With tokenizer transforms list of raw text to list of padded sentences (list of ints)
