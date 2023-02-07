@@ -82,6 +82,10 @@ def preprocess_classify_wiki_text(wiki_raw_text: str) -> pd.DataFrame:
     Returns:
         pd.DataFrame: df
     """
+    wiki_raw_text=str(wiki_raw_text)
+    if type(wiki_raw_text) != str:
+        print(wiki_raw_text)
+        return wiki_raw_text
     newtext = re.sub("\[.*?\]", "_", wiki_raw_text)
 
     i = 0
@@ -277,7 +281,9 @@ def fetch_full_FANG_dataset() -> pd.DataFrame:
     """
     df_list = []
     save = os.getcwd()
-    os.chdir('/Users/jannis/Desktop/GitRepos/Master/masterthesis/Master_Thesis/data/fang-covid-main/articles')
+    os.chdir(
+        '/Users/jannis/Desktop/GitRepos/Master/masterthesis/Master_Thesis/data/fang-covid-main/articles'
+    )
     json_list = (range(1, 41241))
     try:
         for i in json_list:
