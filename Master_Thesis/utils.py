@@ -9,12 +9,25 @@ import nltk
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
+from sklearn import metrics
 from sklearn.model_selection import train_test_split
 
 nltk.download('stopwords')
 from collections import Counter
 
+import matplotlib.pyplot as plt
 from nltk.corpus import stopwords
+
+
+def plot_compute_AUC(ground_truth:list[bool],predicition:tuple)->list:
+    fpr, tpr, _ = metrics.roc_curve(ground_truth,  predicition)
+    auc = metrics.roc_auc_score(ground_truth,  predicition)
+    plt.plot(fpr,tpr,label="AUC="+str(auc))
+    plt.ylabel('True Positive Rate')
+    plt.xlabel('False Positive Rate')
+    plt.legend(loc=4)
+    plt.show()
+    return plt,auc
 
 
 def create_abbreviation_dict() -> dict:
