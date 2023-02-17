@@ -11,3 +11,8 @@ logs
 # Ignore the build directory
 /dist
 
+/wandb
+
+/wandb/.*
+ /__pycache__/.*
+ 

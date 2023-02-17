@@ -19,15 +19,24 @@ import matplotlib.pyplot as plt
 from nltk.corpus import stopwords
 
 
-def plot_compute_AUC(ground_truth:list[bool],predicition:tuple)->list:
-    fpr, tpr, _ = metrics.roc_curve(ground_truth,  predicition)
-    auc = metrics.roc_auc_score(ground_truth,  predicition)
-    plt.plot(fpr,tpr,label="AUC="+str(auc))
+def plot_compute_AUC(ground_truth: list[bool], predicition: list[bool]) -> tuple:
+    """Gets ground truth & prediction. Computes AUC & plots. Returns plot & figure.
+
+    Args:
+        ground_truth (list[bool]): Ground truth bool
+        predicition (list[bool]): Ground truth bool
+
+    Returns:
+        plot: plot file
+        float: area under the curve
+    """
+    fpr, tpr, _ = metrics.roc_curve(ground_truth, predicition)
+    auc = metrics.roc_auc_score(ground_truth, predicition)
+    plt.plot(fpr, tpr, label="AUC=" + str(auc))
     plt.ylabel('True Positive Rate')
     plt.xlabel('False Positive Rate')
     plt.legend(loc=4)
-    plt.show()
-    return plt,auc
+    return plt, auc
 
 
 def create_abbreviation_dict() -> dict:
@@ -85,17 +94,20 @@ def fetch_rawtext_from_wiki(subject='Maschinelles Lernen') -> str:
     return text
 
 
-def preprocess_classify_wiki_text(wiki_raw_text: str) -> pd.DataFrame:
+def preprocess_classify_wiki_text(wiki_raw_text: str,
+                                  text_column='text',
+                                  target_column='target') -> pd.DataFrame:
     """Transforms raw_text wiki article into df with sentences and 
     their is_claim label, based on citation
 
     Args:
         wiki_raw_text (str): Wiki article from API including citations "[1]"
-
+        text_column (str): Text column name. Defaults to 'text'
+        target_column (str): Target column name. Defaults to 'target'
     Returns:
         pd.DataFrame: df
     """
-    wiki_raw_text=str(wiki_raw_text)
+    wiki_raw_text = str(wiki_raw_text)
     if type(wiki_raw_text) != str:
         print(wiki_raw_text)
         return wiki_raw_text
@@ -110,8 +122,8 @@ def preprocess_classify_wiki_text(wiki_raw_text: str) -> pd.DataFrame:
     sen_text = new_text.split(". ")
     is_claim = label_wiki_sentences(sen_text)
     df = pd.DataFrame()
-    df["text"] = sen_text
-    df["target"] = is_claim
+    df[text_column] = sen_text
+    df[target_column] = is_claim
     return df
 
 

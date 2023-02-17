@@ -5,6 +5,7 @@ from tensorflow import keras
 from tensorflow.keras import callbacks, layers
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.preprocessing.text import Tokenizer
+
 from tokenizer_class import TokenizerClass
 from utils import *
 
@@ -35,7 +36,7 @@ class SentenceClassifier():
         self.test_df = self.train_df.copy()
         self.val_df = self.train_df.copy()
 
-    def preprocess_train_val(self, df, text_column="text"):
+    def preprocess_train_val(self, df, test_share=0.1, text_column="text", target_column='target'):
         """Orchestrates run from Whole df to preprocessed train & val dataset
 
         Args:
@@ -44,11 +45,11 @@ class SentenceClassifier():
         Returns:
             _type_: _description_
         """
-        self.whole_df = self.downsample_dataframe_classdist(df)
+        self.whole_df = self.downsample_dataframe_classdist(df, target_column)
         self.whole_df[text_column] = self.tokenizer_class.remove_stopwords_series(
             self.whole_df[text_column])
         self.tokenizer_class.set_unique_words(self.whole_df[text_column])
-        self.train_df, self.val_df = split_val_train(self.whole_df)
+        self.train_df, self.val_df = split_val_train(self.whole_df, test_share)
         self.tokenizer_class.fit_tokenizer_on_train(self.train_df[text_column].tolist())
         self.train_padded = self.raw_text_to_padded_sequences(self.train_df[text_column])
         self.val_padded = self.raw_text_to_padded_sequences(self.val_df[text_column])
@@ -62,7 +63,7 @@ class SentenceClassifier():
         df_false = df_false.sample(min_length)
         df = pd.concat([df_true, df_false], ignore_index=True)
         return df
-
+    
     def raw_text_to_padded_sequences(self, text_list: list[str]) -> list:
         """With tokenizer transforms list of raw text to list of padded sentences (list of ints)
 
@@ -118,14 +119,15 @@ class SentenceClassifier():
         model.compile(loss=loss, optimizer=optim, metrics=metrics)
         return model
 
-    def train_model(self, kwargs={"epochs": 20}):
+    def train_model(self, target_column="target", kwargs={"epochs": 20}):
         if (self.model == "Default"):
             self.model = self.default_model()
         es = EarlyStopping('val_loss', mode='min', verbose=1, patience=2)
         self.model.summary()
+
         self.model.fit(self.train_padded,
-                       self.train_df["target"],
-                       validation_data=(self.val_padded, self.val_df["target"]),
+                       self.train_df[target_column],
+                       validation_data=(self.val_padded, self.val_df[target_column]),
                        callbacks=[es],
                        **kwargs)
         pass
