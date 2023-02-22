@@ -1,0 +1,32 @@
+method: grid
+metric:
+  goal: minimize
+  name: AUC
+  LSTM_dropout:
+    distribution: uniform
+    values: [0.01,0.025,0.05,0.1,0.25,0.4,0.6]
+  dense_activation:
+    distribution: categorical
+    values:
+      - relu
+      - tanh
+      - elu
+      - selu
+      - softsign
+  hidden_layer_size:
+    distribution: int_uniform
+    values:
+    - 768
+    - 512
+    - 256
+    - 128
+  learning_rate:
+    distribution: uniform
+    values:
+    - 0.00001
+    - 0.00025
+    - 0.0005
+    - 0.001
+    - 0.0025
+    - 0.005
+program: train.py

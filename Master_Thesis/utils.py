@@ -93,42 +93,87 @@ def fetch_rawtext_from_wiki(subject='Maschinelles Lernen') -> str:
         text += p.text
     return text
 
+def fetch_wiki_fulltext_linklabeled(subject='Maschinelles Lernen'):
+    """Fetches Raw Text from specified Wiki article and captures info about linkages by writing
+    an underscore at that location. Links are only in the first appearance of a certain word.
+
+    Args:
+        subject (str, optional): Name of Wiki-Article. Defaults to 'Maschinelles Lernen'.
+
+    Returns:
+        str: Raw text from wiki article (including citations) and including _ after a link
+    """
+    parse_url = 'https://de.wikipedia.org/w/api.php'
+    params_parse = {'action': 'parse', 'page': subject, 'format': 'json', 'prop': 'text|links|linkshere', 'redirects': ''}
+
+    # Make the API request
+    response_parse = requests.get(parse_url, params=params_parse).json()
+    raw_html = response_parse['parse']['text']['*']
+    soup = BeautifulSoup(raw_html, 'html.parser')
+    soup.find_all('p')
+    text = ''
+    for p in soup.find_all('p'):
+        text += p.text
+
+    processed_text=''
+    p_elements = soup.find_all('p')
+    print(p_elements)
+    for p in p_elements:
+        # Iterate over each child element of the p element
+        for child in p.children:
+            if child.name == None:
+                # If the child element is a string, add it to the processed text
+                processed_text += child
+            elif child.name == "a":
+                # If the child element is an "a" tag, add a "@" after it
+                processed_text += child.text + " @@ "
+            elif child.name == "b":
+                processed_text += child.text
+            else:
+                # Ignore all other child elements
+                pass
+        # Add a newline character after each p element
+        processed_text += "\n"
+    return processed_text
 
 def preprocess_classify_wiki_text(wiki_raw_text: str,
                                   text_column='text',
-                                  target_column='target') -> pd.DataFrame:
+                                  label_column='label') -> pd.DataFrame:
     """Transforms raw_text wiki article into df with sentences and 
     their is_claim label, based on citation
 
     Args:
         wiki_raw_text (str): Wiki article from API including citations "[1]"
         text_column (str): Text column name. Defaults to 'text'
-        target_column (str): Target column name. Defaults to 'target'
+        label_column (str): Label column name. Defaults to 'label'
+    Raises:
+
     Returns:
-        pd.DataFrame: df
+        pd.DataFrame: DF with sentence in text_column and label in label_column
     """
     wiki_raw_text = str(wiki_raw_text)
-    if type(wiki_raw_text) != str:
-        print(wiki_raw_text)
-        return wiki_raw_text
-    newtext = re.sub("\[.*?\]", "_", wiki_raw_text)
-
+    if not isinstance(wiki_raw_text, str):
+        raise TypeError("No raw text type!")
+    no_cit_text = re.sub("\[.*?\]", "@@", wiki_raw_text)
+    ##Replaced all parts of citation [1],[2] etc. with _
     i = 0
-    newtext = newtext.replace("._", "_.")
-    while i < 1:
-        newtext = newtext.replace("._", ".")
+    no_cit_text = no_cit_text.replace(".@@", "@@.")
+    ##Moved underscore from citation behind sentence in front of fullstop
+    while i < 5:
+        no_cit_text = no_cit_text.replace(".@@", ".")
+        ##iterates in case there of multiple _ behind fullstop.
         i += 1
-    new_text = clean_special_characters(newtext)
-    sen_text = new_text.split(". ")
-    is_claim = label_wiki_sentences(sen_text)
+    cleaned_text = clean_special_characters(no_cit_text)
+    sentence_list = cleaned_text.split(". ")
+    is_claim = label_wiki_sentences(sentence_list)
     df = pd.DataFrame()
-    df[text_column] = sen_text
-    df[target_column] = is_claim
+    df[text_column] = sentence_list
+    df[label_column] = is_claim
     return df
 
 
-def split_val_train(df: pd.DataFrame, test_share=0.1) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Split df into train & test/val df
+def split_val_train(df: pd.DataFrame, test_share=0.1,random_state=2) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Split df into train & test/val df. 
 
     Args:
         df (pd.DataFrame): DF
@@ -137,24 +182,24 @@ def split_val_train(df: pd.DataFrame, test_share=0.1) -> tuple[pd.DataFrame, pd.
     Returns:
         tuple[pd.DataFrame, pd.DataFrame]: train set, test set
     """
-    train_df, val_df = split_train_test(df, test_share)
-    return train_df, val_df
+    train_df, val_df = split_train_test(df, test_share,random_state=random_state)
+    return train_df, val_df 
 
 
-def label_wiki_sentences(sen_text: list[str]) -> list[str]:
+def label_wiki_sentences(sen_text: list[str]) -> list[bool]:
     """Labels preprocessed sentence list (wiki article) as claim or non-claim, based on 
-    if they contain an underscore. Removes underscore afterwards
+    if they contain '@@'. Returns list of bools. Removes underscore afterwards.
 
     Args:
         sen_text (list): list of preprocessed sentences of wiki articles 
 
     Returns:
-        pd.DataFrame: Sentences ["text"] with label ["target"]
+        list[bool]: List of bools, analogues to sentence list and if they contain underscore or not.
     """
     is_claim = []
-    for i in range(len(sen_text)):
-        if "_" in sen_text[i]:
-            sen_text[i] = sen_text[i].replace('_', '')
+    for i, text in enumerate(sen_text):
+        if "@@" in sen_text[i]:
+            sen_text[i] = text.replace('@@', '')
             is_claim.append(True)
         else:
             is_claim.append(False)
@@ -204,7 +249,7 @@ def replace_abbreviations(text, replace_dict=create_abbreviation_dict()):
     return " ".join(new_words)
 
 
-def split_train_test(df, test_size=.10) -> pd.DataFrame:
+def split_train_test(df, test_size=.10,random_state=2) -> tuple[pd.DataFrame]:
     """Splits df into train-test-dfs. Default 10% test.
 
     Args:
@@ -214,7 +259,7 @@ def split_train_test(df, test_size=.10) -> pd.DataFrame:
     Returns:
         _type_: train & test df of incoming type
     """
-    train_df, test_df = train_test_split(df, test_size=test_size)
+    train_df, test_df = train_test_split(df, test_size=test_size,random_state=random_state)
     return train_df, test_df
 
 

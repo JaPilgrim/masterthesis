@@ -1,0 +1,26 @@
+method: bayes
+metric:
+  goal: maximize
+  name: AUC
+parameters:
+  LSTM_dropout:
+      min: 0.005
+      max: 0.075
+  dense_activation:
+    distribution: categorical
+    values:
+      - softsign
+  hidden_layer_size:
+    values:
+      - 256
+      - 128
+  learning_rate:
+      min: 0.00015
+      max: 0.0075
+  batch_size:
+    values:
+      - 16
+      - 32
+      - 64
+      - 128
+program: train.py

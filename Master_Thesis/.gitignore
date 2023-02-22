@@ -12,7 +12,7 @@ logs
 /dist
 
 /wandb
-
-/wandb/.*
+/weight_n_b/wandb/
+/weight_n_b/.**
  /__pycache__/.*
- 
+ /weight_n_b/.*
