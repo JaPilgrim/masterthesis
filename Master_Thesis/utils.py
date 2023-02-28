@@ -17,6 +17,40 @@ from collections import Counter
 
 import matplotlib.pyplot as plt
 from nltk.corpus import stopwords
+from spacy import Language
+
+def get_sentence_pos_str(sentence:str,nlp:Language)->str:
+    """Returns the part-of-speech tags of a given sentence as concatenated strings.
+
+    Args:
+        sentence (str): A sentence, preferably cleaned of stopwords & punctuation.
+        nlp (Language): NLTK language object.
+
+    Returns:
+        str: String of POS tag sequence.
+    """
+    doc = nlp(sentence)
+    sentence_pos =""
+    for token in doc:
+        sentence_pos=sentence_pos+" "+token.pos_
+    return sentence_pos
+
+def get_sentence_pos_list(sentence,nlp:Language)->list[str]:
+    """Returns the part-of-speech tags of a given sentence as list.
+
+    Args:
+        sentence (str): A sentence, preferably cleaned of stopwords & punctuation.
+        nlp (Language): NLTK language object.
+
+    Returns:
+        list[str]: List of String POS tags.
+    """
+    
+    doc = nlp(sentence)
+    sentence_pos = []
+    for token in doc:
+        sentence_pos.append(str(token.pos_))
+    return sentence_pos
 
 
 def plot_compute_AUC(ground_truth: list[bool], predicition: list[bool]) -> tuple:
@@ -83,7 +117,7 @@ def fetch_rawtext_from_wiki(subject='Maschinelles Lernen') -> str:
 
     response = requests.get(url, params=params)
     data = response.json()
-
+    
     raw_html = data['parse']['text']['*']
     soup = BeautifulSoup(raw_html, 'html.parser')
     soup.find_all('p')
@@ -108,33 +142,35 @@ def fetch_wiki_fulltext_linklabeled(subject='Maschinelles Lernen'):
 
     # Make the API request
     response_parse = requests.get(parse_url, params=params_parse).json()
-    raw_html = response_parse['parse']['text']['*']
-    soup = BeautifulSoup(raw_html, 'html.parser')
-    soup.find_all('p')
-    text = ''
-    for p in soup.find_all('p'):
-        text += p.text
-
     processed_text=''
-    p_elements = soup.find_all('p')
-    print(p_elements)
-    for p in p_elements:
-        # Iterate over each child element of the p element
-        for child in p.children:
-            if child.name == None:
-                # If the child element is a string, add it to the processed text
-                processed_text += child
-            elif child.name == "a":
-                # If the child element is an "a" tag, add a "@" after it
-                processed_text += child.text + " @@ "
-            elif child.name == "b":
-                processed_text += child.text
-            else:
-                # Ignore all other child elements
-                pass
-        # Add a newline character after each p element
-        processed_text += "\n"
-    return processed_text
+    try:
+        raw_html = response_parse['parse']['text']['*']
+        soup = BeautifulSoup(raw_html, 'html.parser')
+        soup.find_all('p')
+        text = ''
+        for p in soup.find_all('p'):
+            text += p.text
+
+        
+        p_elements = soup.find_all('p')
+        for p in p_elements:
+            # Iterate over each child element of the p element
+            for child in p.children:
+                if child.name == None:
+                    # If the child element is a string, add it to the processed text
+                    processed_text += child
+                elif child.name == "a":
+                    # If the child element is an "a" tag, add a "@" after it
+                    processed_text += child.text + " @@ "
+                elif child.name == "b":
+                    processed_text += child.text
+                else:
+                    # Ignore all other child elements
+                    pass
+            # Add a newline character after each p element
+            processed_text += "\n"
+    finally:
+            return processed_text
 
 def preprocess_classify_wiki_text(wiki_raw_text: str,
                                   text_column='text',

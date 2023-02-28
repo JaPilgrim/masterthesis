@@ -59,7 +59,7 @@ def fetch_sampled_wiki_sentences(sample_size=221352,
     df_false = df[df['label'] == False].sample(n=class_size, random_state=random_state)
     df_concated = pd.concat([df_true, df_false])
     return df_concated
-
+    
 def depr_fetch_sampled_wiki_sentences(class_size=110000,
                                  random_state=2,
                                  path='/data/wiki_all_sentence.csv'):
