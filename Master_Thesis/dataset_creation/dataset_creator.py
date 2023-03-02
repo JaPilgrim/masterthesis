@@ -1,11 +1,14 @@
 import pandas as pd
 
-from utils import (fetch_from_fangcovid_local, fetch_rawtext_from_wiki,
-                   preprocess_classify_wiki_text)
+from utils import (fetch_from_fangcovid_local, fetch_rawtext_from_wiki, split_classify_wiki_text)
 
 
 class DatasetCreator():
-    def __init__(self, df,) -> None:
+
+    def __init__(
+        self,
+        df,
+    ) -> None:
         self.df = df
         pass
 
@@ -18,13 +21,11 @@ class DatasetCreator():
             "Zeitung", "Rundfunk", "Verlag", "Politisches System der Bundesrepublik Deutschland",
             "Politisches System", "Massenmedien", "Medienwissenschaft", "Publikation"
         ],
-    )->pd.DataFrame:
+    ) -> pd.DataFrame:
         text = ''
         for name in articles:
             print(name)
             raw = fetch_rawtext_from_wiki(name)
             text = text + raw
-        self.df = preprocess_classify_wiki_text(text)
+        self.df = split_classify_wiki_text(text)
         return self.df
-    
-    

@@ -19,7 +19,8 @@ import matplotlib.pyplot as plt
 from nltk.corpus import stopwords
 from spacy import Language
 
-def get_sentence_pos_str(sentence:str,nlp:Language)->str:
+
+def get_sentence_pos_str(sentence: str, nlp: Language) -> str:
     """Returns the part-of-speech tags of a given sentence as concatenated strings.
 
     Args:
@@ -30,12 +31,13 @@ def get_sentence_pos_str(sentence:str,nlp:Language)->str:
         str: String of POS tag sequence.
     """
     doc = nlp(sentence)
-    sentence_pos =""
+    sentence_pos = ""
     for token in doc:
-        sentence_pos=sentence_pos+" "+token.pos_
+        sentence_pos = sentence_pos + " " + token.pos_
     return sentence_pos
 
-def get_sentence_pos_list(sentence,nlp:Language)->list[str]:
+
+def get_sentence_pos_list(sentence, nlp: Language) -> list[str]:
     """Returns the part-of-speech tags of a given sentence as list.
 
     Args:
@@ -45,7 +47,7 @@ def get_sentence_pos_list(sentence,nlp:Language)->list[str]:
     Returns:
         list[str]: List of String POS tags.
     """
-    
+
     doc = nlp(sentence)
     sentence_pos = []
     for token in doc:
@@ -117,7 +119,7 @@ def fetch_rawtext_from_wiki(subject='Maschinelles Lernen') -> str:
 
     response = requests.get(url, params=params)
     data = response.json()
-    
+
     raw_html = data['parse']['text']['*']
     soup = BeautifulSoup(raw_html, 'html.parser')
     soup.find_all('p')
@@ -126,6 +128,7 @@ def fetch_rawtext_from_wiki(subject='Maschinelles Lernen') -> str:
     for p in soup.find_all('p'):
         text += p.text
     return text
+
 
 def fetch_wiki_fulltext_linklabeled(subject='Maschinelles Lernen'):
     """Fetches Raw Text from specified Wiki article and captures info about linkages by writing
@@ -138,11 +141,17 @@ def fetch_wiki_fulltext_linklabeled(subject='Maschinelles Lernen'):
         str: Raw text from wiki article (including citations) and including _ after a link
     """
     parse_url = 'https://de.wikipedia.org/w/api.php'
-    params_parse = {'action': 'parse', 'page': subject, 'format': 'json', 'prop': 'text|links|linkshere', 'redirects': ''}
+    params_parse = {
+        'action': 'parse',
+        'page': subject,
+        'format': 'json',
+        'prop': 'text|links|linkshere',
+        'redirects': ''
+    }
 
     # Make the API request
     response_parse = requests.get(parse_url, params=params_parse).json()
-    processed_text=''
+    processed_text = ''
     try:
         raw_html = response_parse['parse']['text']['*']
         soup = BeautifulSoup(raw_html, 'html.parser')
@@ -151,7 +160,6 @@ def fetch_wiki_fulltext_linklabeled(subject='Maschinelles Lernen'):
         for p in soup.find_all('p'):
             text += p.text
 
-        
         p_elements = soup.find_all('p')
         for p in p_elements:
             # Iterate over each child element of the p element
@@ -170,11 +178,12 @@ def fetch_wiki_fulltext_linklabeled(subject='Maschinelles Lernen'):
             # Add a newline character after each p element
             processed_text += "\n"
     finally:
-            return processed_text
+        return processed_text
 
-def preprocess_classify_wiki_text(wiki_raw_text: str,
-                                  text_column='text',
-                                  label_column='label') -> pd.DataFrame:
+
+def split_classify_wiki_text(wiki_raw_text: str,
+                             text_column='text',
+                             label_column='label') -> pd.DataFrame:
     """Transforms raw_text wiki article into df with sentences and 
     their is_claim label, based on citation
 
@@ -206,20 +215,6 @@ def preprocess_classify_wiki_text(wiki_raw_text: str,
     df[text_column] = sentence_list
     df[label_column] = is_claim
     return df
-
-
-def split_val_train(df: pd.DataFrame, test_share=0.1,random_state=2) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Split df into train & test/val df. 
-
-    Args:
-        df (pd.DataFrame): DF
-        test_share (float, optional): Share of val set. Defaults to 0.1.
-
-    Returns:
-        tuple[pd.DataFrame, pd.DataFrame]: train set, test set
-    """
-    train_df, val_df = split_train_test(df, test_share,random_state=random_state)
-    return train_df, val_df 
 
 
 def label_wiki_sentences(sen_text: list[str]) -> list[bool]:
@@ -285,21 +280,39 @@ def replace_abbreviations(text, replace_dict=create_abbreviation_dict()):
     return " ".join(new_words)
 
 
-def split_train_test(df, test_size=.10,random_state=2) -> tuple[pd.DataFrame]:
-    """Splits df into train-test-dfs. Default 10% test.
+def split_train_val(df,
+                    test_size=.10,
+                    random_state=2,
+                    label_column='label') -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Splits df into train-test-dfs. Default 10% test and preserves distribution of label_column.
 
     Args:
         df (_type_): dataframe of any kind
         test_size (float, optional): Fraction of Test Set. Defaults to .10.
+        random_state (int): Random seed. Defaults to 2.
+        label_column (str): Name of the labeling column whose distribution is supposed to be 
+        preserved. Defaults to 'label'.
 
     Returns:
-        _type_: train & test df of incoming type
+        df: train & test df of incoming type
     """
-    train_df, test_df = train_test_split(df, test_size=test_size,random_state=random_state)
+    train_df, test_df = train_test_split(df,
+                                         test_size=test_size,
+                                         random_state=random_state,
+                                         stratify=df[label_column])
     return train_df, test_df
 
 
 def remove_stopwords(text: str, stopwords=stopwords.words("german")) -> str:
+    """Removes stopwords from a text.
+
+    Args:
+        text (str): Input text
+        stopwords (_type_, optional): List of words. Defaults to stopwords.words("german").
+
+    Returns:
+        str: _description_
+    """
     stop = set(stopwords)
     filtered_words = [word.lower() for word in text.split() if word.lower() not in stop]
     return " ".join(filtered_words)
@@ -341,7 +354,6 @@ def draw_proportional_randomsample_from_FANG_df(df_full, total_number_sentences=
 def get_random_sentences_verlag(df_full, verlage_aggr, sentence_fraction, verlag):
     """Gets a fraction (specified in params) of random sentences from all articles of a verlag. Therefore iterates
     over all articles.
-
 
     Args:
         df_full (_type_): _description_

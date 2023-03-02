@@ -9,10 +9,8 @@ from tensorflow.keras.preprocessing.text import Tokenizer
 from back_classes.tokenizer_class import TokenizerClass
 from utils import *
 
-#TODO: Funnktion die sich join zwischen POS von claim & nonclaim anschaut und die matches aus nonclaim rauslöscht
-
-
 class SentenceClassifier():
+
     def __init__(self,
                  tokenizer_class: TokenizerClass,
                  model="Default",
@@ -36,7 +34,11 @@ class SentenceClassifier():
         self.test_df = self.train_df.copy()
         self.val_df = self.train_df.copy()
 
-    def preprocess_train_val(self, df, test_share=0.1, text_column="text", label_column='label'):
+    def preprocess_train_val(self,
+                             df,
+                             val_share=0.1,
+                             text_column="text",
+                             label_column='label') -> list[pd.DataFrame]:
         """Orchestrates run from Whole df to preprocessed train & val dataset
 
         Args:
@@ -49,13 +51,16 @@ class SentenceClassifier():
         self.whole_df[text_column] = self.tokenizer_class.remove_stopwords_series(
             self.whole_df[text_column])
         self.tokenizer_class.set_unique_words(self.whole_df[text_column])
-        self.train_df, self.val_df = split_val_train(self.whole_df, test_share)
+        self.train_df, self.val_df = split_train_val(self.whole_df, val_share)
         self.tokenizer_class.fit_tokenizer_on_train(self.train_df[text_column].tolist())
         self.train_padded = self.raw_text_to_padded_sequences(self.train_df[text_column])
         self.val_padded = self.raw_text_to_padded_sequences(self.val_df[text_column])
         return self.train_df, self.val_df, self.whole_df
-
-    def downsample_dataframe_classdist(self, df:pd.DataFrame, label_column='label',random_state=2):
+    
+    def downsample_dataframe_classdist(self,
+                                       df: pd.DataFrame,
+                                       label_column='label',
+                                       random_state=2):
         """Downsample a DF with binary label column to the size of the smaller class.
 
         Args:
@@ -68,14 +73,14 @@ class SentenceClassifier():
         """
         df_true = df[df[label_column] == True]
         df_false = df[df[label_column] == False]
-        if len(df_true)==len(df_false):
+        if len(df_true) == len(df_false):
             return df
         min_length = min(len(df_true), len(df_false))
-        df_true = df_true.sample(min_length,random_state=random_state)
-        df_false = df_false.sample(min_length,random_state=random_state)
+        df_true = df_true.sample(min_length, random_state=random_state)
+        df_false = df_false.sample(min_length, random_state=random_state)
         df = pd.concat([df_true, df_false], ignore_index=True)
         return df
-        
+
     def raw_text_to_padded_sequences(self, text_list: list[str]) -> list:
         """With tokenizer transforms list of raw text to list of padded sentences (list of ints)
 
@@ -147,7 +152,3 @@ class SentenceClassifier():
                        callbacks=[es],
                        **kwargs)
         pass
-
-    # def split_val_train(self, df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
-    #     train_df, val_df = split_train_test(df, self.test_share)
-    #     return train_df, val_df

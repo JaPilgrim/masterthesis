@@ -1,19 +1,21 @@
 import hashlib
 import json
+import random as python_random
 
 import keras
 import pandas as pd
+import tensorflow as tf
+import wandb
 import yaml
 from keras.callbacks import EarlyStopping
 from numpy.random import seed
 from tensorflow import keras
 from tensorflow.keras import callbacks, layers
-import tensorflow as tf
-import wandb
+
 from back_classes.sentence_classifier import SentenceClassifier
 from back_classes.tokenizer_class import TokenizerClass
 from utils import *
-import random as python_random
+
 # sweep_configuration = {
 #     'method': 'bayes',
 #     'name': 'sweep-first',
@@ -50,24 +52,26 @@ def fetch_sampled_wiki_sentences(sample_size=221352,
     class_size = int(sample_size / 2)
     all_articles = pd.read_csv(path, sep=',')[['title', 'bytes', 'full_text']]
     i = 1
-    df = preprocess_classify_wiki_text(all_articles['full_text'].iloc[0])
+    df = split_classify_wiki_text(all_articles['full_text'].iloc[0])
     while i < len(all_articles):
-        working_df = preprocess_classify_wiki_text(all_articles['full_text'].iloc[i])
+        working_df = split_classify_wiki_text(all_articles['full_text'].iloc[i])
         df = pd.concat([df, working_df])
         i += 1
     df_true = df[df['label'] == True].sample(n=class_size, random_state=random_state)
     df_false = df[df['label'] == False].sample(n=class_size, random_state=random_state)
     df_concated = pd.concat([df_true, df_false])
     return df_concated
-    
+
+
 def depr_fetch_sampled_wiki_sentences(class_size=110000,
-                                 random_state=2,
-                                 path='/data/wiki_all_sentence.csv'):
-    df=pd.read_csv(path, sep=',')[['text','label']]
+                                      random_state=2,
+                                      path='/data/wiki_all_sentence.csv'):
+    df = pd.read_csv(path, sep=',')[['text', 'label']]
     df_true = df[df['label'] == True].sample(n=class_size, random_state=random_state)
     df_false = df[df['label'] == False].sample(n=class_size, random_state=random_state)
     df_concated = pd.concat([df_true, df_false])
     return df_concated
+
 
 def hash_fn_wrapper(loss_fn):
     hash_value = (str(loss_fn.__class__.__name__) + str(loss_fn.__dict__))
@@ -92,7 +96,7 @@ def init_classes(df_train, eval_share):
 
 
 def main():
-    random_state=2
+    random_state = 2
     seed(random_state)
     python_random.seed(random_state)
     tf.random.set_seed(random_state)
@@ -105,24 +109,33 @@ def main():
     claim_extract = init_classes(df_train, 0.25)
 
     model = keras.models.Sequential()
-    model.add(layers.Embedding(claim_extract.tokenizer_class.num_unique_words, 32, input_length=32,embeddings_initializer=tf.keras.initializers.RandomUniform(seed=random_state)),)
-    model.add(layers.LSTM(wandb.config.hidden_layer_size, dropout=wandb.config.LSTM_dropout, recurrent_initializer=tf.keras.initializers.Orthogonal(seed=42)))
-    model.add(layers.Dense(1, activation=wandb.config.dense_activation,kernel_initializer=tf.keras.initializers.RandomUniform(seed=42)))
-
+    model.add(
+        layers.Embedding(
+            claim_extract.tokenizer_class.num_unique_words,
+            32,
+            input_length=32,
+            embeddings_initializer=tf.keras.initializers.RandomUniform(seed=random_state)), )
+    model.add(
+        layers.LSTM(wandb.config.hidden_layer_size,
+                    dropout=wandb.config.LSTM_dropout,
+                    recurrent_initializer=tf.keras.initializers.Orthogonal(seed=42)))
+    model.add(
+        layers.Dense(1,
+                     activation=wandb.config.dense_activation,
+                     kernel_initializer=tf.keras.initializers.RandomUniform(seed=42)))
 
     model.summary()
     loss = keras.losses.BinaryCrossentropy(from_logits=False)
     optim = keras.optimizers.Adam(learning_rate=wandb.config.learning_rate)
-
 
     metrics = ['accuracy']
     model.compile(loss=loss, optimizer=optim, metrics=metrics)
 
     es = EarlyStopping("val_accuracy", mode='min', verbose=1, patience=2)
 
-
     history = model.fit(claim_extract.train_padded,
-                        claim_extract.train_df['label'],batch_size=wandb.config.batch_size,
+                        claim_extract.train_df['label'],
+                        batch_size=wandb.config.batch_size,
                         validation_data=(claim_extract.val_padded, claim_extract.val_df['label']),
                         callbacks=[es],
                         epochs=10)
