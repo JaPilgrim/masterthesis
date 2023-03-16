@@ -12,7 +12,7 @@ from numpy.random import seed
 from tensorflow import keras
 from tensorflow.keras import callbacks, layers
 
-from back_classes.sentence_classifier import SentenceClassifier
+from back_classes.sentence_classifier import LSTMDataset
 from back_classes.tokenizer_class import TokenizerClass
 from utils import *
 
@@ -90,8 +90,8 @@ def evaluate_model(model, claim_extract):
 
 def init_classes(df_train, eval_share):
     tokenizer = TokenizerClass()
-    claim_extract = SentenceClassifier(tokenizer_class=tokenizer)
-    claim_extract.preprocess_train_val(df_train, eval_share)
+    claim_extract = LSTMDataset(tokenizer_class=tokenizer)
+    claim_extract.whole_df_to_preprocessed_train_val(df_train, eval_share)
     return claim_extract
 
 

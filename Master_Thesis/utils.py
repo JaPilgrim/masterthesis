@@ -6,10 +6,12 @@ import re
 from random import sample
 
 import nltk
+import numpy as np
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 from sklearn import metrics
+from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 
 nltk.download('stopwords')
@@ -54,20 +56,35 @@ def get_sentence_pos_list(sentence, nlp: Language) -> list[str]:
         sentence_pos.append(str(token.pos_))
     return sentence_pos
 
+def compute_accuracy_AUC(probabilities: pd.Series, prediction: pd.Series) -> tuple:
+    """Computes and returns AUC & accuracy. 
+    Args:
+        ground_truth (list[bool]): Ground truth bool
+        predicition (list[bool]): Prediction bool
 
-def plot_compute_AUC(ground_truth: list[bool], predicition: list[bool]) -> tuple:
+    Returns:
+        float: accuracy
+        float: AUC
+    """
+    ground_truth = np.where(probabilities >=0.5,1,0)
+
+    accuracy = accuracy_score(ground_truth, prediction)
+    auc = metrics.roc_auc_score(ground_truth, prediction)
+    return accuracy, auc
+
+def plot_compute_AUC(ground_truth: pd.Series, prediction: pd.Series) -> tuple:
     """Gets ground truth & prediction. Computes AUC & plots. Returns plot & figure.
 
     Args:
         ground_truth (list[bool]): Ground truth bool
-        predicition (list[bool]): Ground truth bool
+        predicition (list[bool]): Prediction bool
 
     Returns:
         plot: plot file
         float: area under the curve
     """
-    fpr, tpr, _ = metrics.roc_curve(ground_truth, predicition)
-    auc = metrics.roc_auc_score(ground_truth, predicition)
+    fpr, tpr, _ = metrics.roc_curve(ground_truth, prediction)
+    auc = metrics.roc_auc_score(ground_truth, prediction)
     plt.plot(fpr, tpr, label="AUC=" + str(auc))
     plt.ylabel('True Positive Rate')
     plt.xlabel('False Positive Rate')
@@ -280,6 +297,51 @@ def replace_abbreviations(text, replace_dict=create_abbreviation_dict()):
     return " ".join(new_words)
 
 
+def downsample_dataframe_classdist(df: pd.DataFrame, label_column='label', random_state=2):
+    """Downsample a DF with binary label column to the size of the smaller class.
+
+    Args:
+        df (DataFrame): Df to be downsampled.
+        label_column (str, optional): Namen of label column. Defaults to 'label'.
+        random_state (int, optional): Random seed. Defaults to 2.
+
+    Returns:
+        pd.DataFrame: downsampled DF
+    """
+    df_true = df[df[label_column] == True]
+    df_false = df[df[label_column] == False]
+    if len(df_true) == len(df_false):
+        return df
+    min_length = min(len(df_true), len(df_false))
+    df_true = df_true.sample(min_length, random_state=random_state)
+    df_false = df_false.sample(min_length, random_state=random_state)
+    df = pd.concat([df_true, df_false], ignore_index=True)
+    return df
+
+
+
+# def upsample_dataframe_classdist(df: pd.DataFrame, label_column='label', random_state=2):
+#     """Upsample a DF with binary label column to the size of the smaller class.
+
+#     Args:
+#         df (DataFrame): Df to be upsampled.
+#         label_column (str, optional): Name of label column. Defaults to 'label'.
+#         random_state (int, optional): Random seed. Defaults to 2.
+
+#     Returns:
+#         pd.DataFrame: downsampled DF
+#     """
+#     df_true = df[df[label_column] == True]
+#     df_false = df[df[label_column] == False]
+#     if len(df_true) == len(df_false):
+#         return df
+#     max_length = max(len(df_true), len(df_false))
+#     df_true = df_true.sample(max_length, random_state=random_state)
+#     df_false = df_false.sample(max_length, random_state=random_state)
+#     df = pd.concat([df_true, df_false], ignore_index=True)
+#     return df
+
+
 def split_train_val(df,
                     test_size=.10,
                     random_state=2,
@@ -314,7 +376,9 @@ def remove_stopwords(text: str, stopwords=stopwords.words("german")) -> str:
         str: _description_
     """
     stop = set(stopwords)
-    filtered_words = [word.lower() for word in text.split() if word.lower() not in stop]
+    filtered_words=''
+    if isinstance(text,str):
+        filtered_words = [word.lower() for word in text.split() if (isinstance(word,str) & (word.lower() not in stop))]
     return " ".join(filtered_words)
 
 
@@ -326,8 +390,8 @@ def counter_word(text_col):
     return count
 
 
-def decode(sequence):
-    return " ".join([reverse_word_index.get(idx, "?") for idx in sequence])
+# def decode(sequence):
+#     return " ".join([reverse_word_index.get(idx, "?") for idx in sequence])
 
 
 def draw_proportional_randomsample_from_FANG_df(df_full, total_number_sentences=100):

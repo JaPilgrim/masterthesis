@@ -30,7 +30,7 @@ class TokenizerClass():
         self.tokenizer.fit_on_texts(texts=train_sentence_list)
         return self.num_unique_words
 
-    def set_unique_words(self, sentence_list: list[str]) -> int:
+    def set_unique_words(self, sentence_list: pd.Series) -> int:
         """Counts number of unique words over list of sentences, stores it to class variable 
         num_unique_words & returns it.
 
