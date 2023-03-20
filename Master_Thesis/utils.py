@@ -4,6 +4,7 @@ import os
 import random
 import re
 from random import sample
+from typing import List
 
 import nltk
 import numpy as np
@@ -39,6 +40,22 @@ def get_sentence_pos_str(sentence: str, nlp: Language) -> str:
     return sentence_pos
 
 
+def at_suffix_on_substring(word_list: List, free_text: str) -> str:
+    """Adds the suffix " @@ " behind every occurence of an element of word_list in free_text.
+
+    Args:
+        word_list (list[str]): List of words to be searched for.
+        free_text (str): Free text to be looked in.
+
+    Returns:
+        linked_text: Free text but with " @@ " added behind.
+    """
+    for word in word_list:
+        if word in free_text:
+            free_text = free_text.replace(word, word + " @@ ")
+    return free_text
+
+
 def get_sentence_pos_list(sentence, nlp: Language) -> list[str]:
     """Returns the part-of-speech tags of a given sentence as list.
 
@@ -56,6 +73,7 @@ def get_sentence_pos_list(sentence, nlp: Language) -> list[str]:
         sentence_pos.append(str(token.pos_))
     return sentence_pos
 
+
 def compute_accuracy_AUC(probabilities: pd.Series, prediction: pd.Series) -> tuple:
     """Computes and returns AUC & accuracy. 
     Args:
@@ -66,11 +84,12 @@ def compute_accuracy_AUC(probabilities: pd.Series, prediction: pd.Series) -> tup
         float: accuracy
         float: AUC
     """
-    ground_truth = np.where(probabilities >=0.5,1,0)
+    ground_truth = np.where(probabilities >= 0.5, 1, 0)
 
     accuracy = accuracy_score(ground_truth, prediction)
     auc = metrics.roc_auc_score(ground_truth, prediction)
     return accuracy, auc
+
 
 def plot_compute_AUC(ground_truth: pd.Series, prediction: pd.Series) -> tuple:
     """Gets ground truth & prediction. Computes AUC & plots. Returns plot & figure.
@@ -318,7 +337,6 @@ def downsample_dataframe_classdist(df: pd.DataFrame, label_column='label', rando
     return df
 
 
-
 # def upsample_dataframe_classdist(df: pd.DataFrame, label_column='label', random_state=2):
 #     """Upsample a DF with binary label column to the size of the smaller class.
 
@@ -375,9 +393,12 @@ def remove_stopwords(text: str, stopwords=stopwords.words("german")) -> str:
         str: _description_
     """
     stop = set(stopwords)
-    filtered_words=''
-    if isinstance(text,str):
-        filtered_words = [word.lower() for word in text.split() if (isinstance(word,str) & (word.lower() not in stop))]
+    filtered_words = ''
+    if isinstance(text, str):
+        filtered_words = [
+            word.lower() for word in text.split()
+            if (isinstance(word, str) & (word.lower() not in stop))
+        ]
     return " ".join(filtered_words)
 
 
