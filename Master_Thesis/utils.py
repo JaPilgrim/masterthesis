@@ -149,8 +149,7 @@ def fetch_rawtext_from_wiki(subject='Maschinelles Lernen') -> str:
 
 def fetch_wiki_fulltext_linklabeled(subject='Maschinelles Lernen'):
     """Fetches Raw Text from specified Wiki article and captures info about linkages by writing
-    an underscore at that location. Links are only in the first appearance of a certain word.
-
+    '@@' behind that location. 
     Args:
         subject (str, optional): Name of Wiki-Article. Defaults to 'Maschinelles Lernen'.
 
@@ -209,7 +208,7 @@ def split_classify_wiki_text(wiki_raw_text: str,
         text_column (str): Text column name. Defaults to 'text'
         label_column (str): Label column name. Defaults to 'label'
     Raises:
-
+        TypeError: 
     Returns:
         pd.DataFrame: DF with sentence in text_column and label in label_column
     """
