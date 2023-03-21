@@ -40,19 +40,20 @@ def get_sentence_pos_str(sentence: str, nlp: Language) -> str:
     return sentence_pos
 
 
-def at_suffix_on_substring(word_list: List, free_text: str) -> str:
-    """Adds the suffix " @@ " behind every occurence of an element of word_list in free_text.
+def prefix_on_substring(word_list: List, free_text: str,prefix=" ++ ") -> str:
+    """Adds a prefix in front o every occurence of an element of word_list in free_text.
 
     Args:
         word_list (list[str]): List of words to be searched for.
         free_text (str): Free text to be looked in.
+        prefix (str): Desired prefix. Defaults to " ?? "
 
     Returns:
-        linked_text: Free text but with " @@ " added behind.
+        linked_text: Free text but with prefix added.
     """
     for word in word_list:
         if word in free_text:
-            free_text = free_text.replace(word, word + " @@ ")
+            free_text = free_text.replace(word, prefix + word)
     return free_text
 
 
@@ -127,6 +128,7 @@ def create_abbreviation_dict() -> dict:
         'd. h.': 'das heisst',
         'Dr.': 'Doktor',
         'etc.': 'et cetera',
+        'engl.':'englisch',
         'ggf.': 'gegebenenfalls',
         'i.d.R.': 'in der Regel',
         'i.A.': 'im Allgemeinen',
@@ -168,7 +170,8 @@ def fetch_rawtext_from_wiki(subject='Maschinelles Lernen') -> str:
 
 def fetch_wiki_fulltext_linklabeled(subject='Maschinelles Lernen'):
     """Fetches Raw Text from specified Wiki article and captures info about linkages by writing
-    '@@' behind that location. 
+    ' @@ ' behind that location when it comes from citation, ' == ' when it comes from direct link
+    and ' ++ ' when it comes from the linktext appearing in the text.
     Args:
         subject (str, optional): Name of Wiki-Article. Defaults to 'Maschinelles Lernen'.
 
@@ -196,32 +199,46 @@ def fetch_wiki_fulltext_linklabeled(subject='Maschinelles Lernen'):
             text += p.text
 
         p_elements = soup.find_all('p')
+
+        linked_words =[]
         for p in p_elements:
             # Iterate over each child element of the p element
             for child in p.children:
-                if child.name == None:
-                    # If the child element is a string, add it to the processed text
-                    processed_text += child
+                if child.name  in (None,'i','b') :
+                    # If tag is from free-text (none, italic or bold), add @@ behind linked words
+                    # and append
+                    linked_text = prefix_on_substring(linked_words,child.text,' ++ ')
+                    processed_text += linked_text
+                elif child.name == 'sup':
+                    # If tag is citation
+                    # Only add the @@
+                    if processed_text[-1]=='.':
+                        processed_text= processed_text[:-1] + " @@ " + '.'
+                    else:
+                        processed_text += " @@ "
                 elif child.name == "a":
-                    # If the child element is an "a" tag, add a "@" after it
-                    processed_text += child.text + " @@ "
-                elif child.name == "b":
-                    processed_text += child.text
+                    # If the child element is an "a" tag (link here), add a "@@" after it
+                    # Also add title of linked page, and link-text with leading space
+                    # and trailing space/comma/fullstop to linked_words list
+                    processed_text += child.text + " == "
+                    linked_words.append(" " + child.get("title") + " ")
+                    linked_words.append(" " + child.get("title") + ",")
+                    linked_words.append(" " + child.get("title") + ".")
+                    linked_words.append(" " + child.text + " ")
+                    linked_words.append(" " + child.text + ",")
+                    linked_words.append(" " + child.text + ".")
                 else:
-                    # Ignore all other child elements
                     pass
-            # Add a newline character after each p element
-            processed_text += "\n"
     finally:
         return processed_text
-
+    
 
 def split_classify_wiki_text(wiki_raw_text: str,
                              text_column='text',
                              label_column='label') -> pd.DataFrame:
     """Transforms raw_text wiki article into df with sentences and 
     their is_claim label, based on citation
-
+    
     Args:
         wiki_raw_text (str): Wiki article from API including citations "[1]"
         text_column (str): Text column name. Defaults to 'text'
@@ -264,8 +281,10 @@ def label_wiki_sentences(sen_text: list[str]) -> list[bool]:
     """
     is_claim = []
     for i, text in enumerate(sen_text):
-        if "@@" in sen_text[i]:
-            sen_text[i] = text.replace('@@', '')
+        if ((" @@ " in sen_text[i]) or (" == " in sen_text[i]) or (" ++ " in sen_text[i])):
+            sen_text[i] = text.replace(' @@ ', '')
+            sen_text[i] = text.replace(' == ', '')
+            sen_text[i] = text.replace(' ++ ', '')
             is_claim.append(True)
         else:
             is_claim.append(False)
@@ -285,7 +304,7 @@ def clean_special_characters(text: str) -> str:
 
     Args:
         text (str): Raw text of any kind
-
+    
     Returns:
         str: cleaned text.
     """
@@ -295,7 +314,8 @@ def clean_special_characters(text: str) -> str:
     new_text = new_text.strip()
     new_text = new_text.replace('\r', '')
     new_text = new_text.replace('\n', ' ')
-
+    new_text = new_text.replace('\n', ' ')
+    new_text= new_text.replace("[", "").replace("{", "").replace("*", "").replace("]","").replace('*',"")
     return new_text
 
 

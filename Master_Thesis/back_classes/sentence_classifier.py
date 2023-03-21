@@ -104,7 +104,7 @@ class LSTMDataset():
                                                      random_state=random_state)
 
         self.tokenizer_class.fit_tokenizer_on_train(self.train_df[self.text_column].tolist())
-
+        
         self.train_padded = self.raw_text_to_padded_sequences(self.train_df[self.text_column])
         self.val_padded = self.raw_text_to_padded_sequences(self.val_df[self.text_column])
 
