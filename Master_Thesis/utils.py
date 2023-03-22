@@ -119,25 +119,58 @@ def create_abbreviation_dict() -> dict:
         dict: Keys: Abbreviation - Values: Full Text
     """
     abbr_to_text = {
-        'a. D.': '',
-        'a. d.': 'an der',
+        'a.':'ausser',
+        'a. D.': 'ausser Dienst',
+        'a. d.': 'ausser Dienst',
+        'Abs.':'Absatz',
+        'abs.':'absatz',
         'Abb.': 'Abbildung',
+        'A.G.':'Aktiengesellschafft',
         'bzw.': 'beziehungsweise',
+        'Bd.':'Band',
         'ca.': 'circa',
         'cf.': 'confer',
+        'Co.': 'Company',
+        'co.': 'company',
+        'Dtschl.':'Deutschland',
+        'dtsch.':'dtsch.',
+        'europ.':'europäisch',
+        'h.':'heißt',
         'd. h.': 'das heisst',
+        '(d.':'das',
         'Dr.': 'Doktor',
+        'Dok.':'Dokument',
         'etc.': 'et cetera',
+        'Ed.':'Edition',
         'engl.':'englisch',
+        'Engl.':'Englisch',
+        'ff.':'fortfolgende',
+        'geb.':'geboren',
         'ggf.': 'gegebenenfalls',
+        'K.G.':'Kommanditgesellschaft',
         'i.d.R.': 'in der Regel',
+        'i.':'in',
+        'd.':'der',
+        'R.':'Regel',
         'i.A.': 'im Allgemeinen',
         'Ph.D.': 'Doctor of Philosophy',
+        'Ph.':'Philosophy',
+        'D.':'Doctor',
         'Prof.': 'Professor',
         'prof.': 'Professor',
+        'Nr.':'Nummer',
+        'nr.':'Nummer',
+        'S.A.':'Sturmabteilung',
+        'S.':'Seite',
         'usw.': 'und so weiter',
         'v.a.': 'vor allem',
+        'v. A.':'vor Allem',
+        'v.':'vor',
+        'A.':'Allem',
         'z. B.': 'zum Beispiel',
+        'z.':'zum',
+        'B.':'Beispiel',
+        'T.':'Teil',
         'z. T.': 'zum Teil',
     }
     return abbr_to_text
@@ -207,20 +240,22 @@ def fetch_wiki_fulltext_linklabeled(subject='Maschinelles Lernen'):
                 if child.name  in (None,'i','b') :
                     # If tag is from free-text (none, italic or bold), add @@ behind linked words
                     # and append
-                    linked_text = prefix_on_substring(linked_words,child.text,' ++ ')
+                    linked_text = prefix_on_substring(linked_words,child.text,'++')
                     processed_text += linked_text
                 elif child.name == 'sup':
                     # If tag is citation
                     # Only add the @@
                     if processed_text[-1]=='.':
-                        processed_text= processed_text[:-1] + " @@ " + '.'
+                        processed_text= processed_text[:-1] + "@@" + '.'
                     else:
-                        processed_text += " @@ "
+                        processed_text += "@@"
                 elif child.name == "a":
                     # If the child element is an "a" tag (link here), add a "@@" after it
                     # Also add title of linked page, and link-text with leading space
                     # and trailing space/comma/fullstop to linked_words list
-                    processed_text += child.text + " == "
+                    punct_removed_text = child.text.replace('.','')
+                    cleaned_link_text = punct_removed_text.replace('!','')
+                    processed_text += cleaned_link_text + "=="
                     linked_words.append(" " + child.get("title") + " ")
                     linked_words.append(" " + child.get("title") + ",")
                     linked_words.append(" " + child.get("title") + ".")
@@ -231,7 +266,7 @@ def fetch_wiki_fulltext_linklabeled(subject='Maschinelles Lernen'):
                     pass
     finally:
         return processed_text
-    
+
 
 def split_classify_wiki_text(wiki_raw_text: str,
                              text_column='text',
@@ -316,6 +351,7 @@ def clean_special_characters(text: str) -> str:
     new_text = new_text.replace('\n', ' ')
     new_text = new_text.replace('\n', ' ')
     new_text= new_text.replace("[", "").replace("{", "").replace("*", "").replace("]","").replace('*',"")
+    new_text= new_text.replace("(", "").replace(")", "")
     return new_text
 
 
