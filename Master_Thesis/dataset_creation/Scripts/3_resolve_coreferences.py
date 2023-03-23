@@ -11,16 +11,16 @@ import Levenshtein
 nlp = spacy.load('de_core_news_sm')
 nlp.add_pipe('coreferee')
 
-all_article_list_full = pd.read_csv('../../data/2_articles_labeled_cleaned.csv')
-all_article_list_full['sentence_list'] = all_article_list_full['sentence_list'].apply(
+df = pd.read_csv('../../data/2_articles_labeled_cleaned.csv')
+df['sentence_list'] = df['sentence_list'].apply(
     ast.literal_eval)
 
-text_list = all_article_list_full.cleaned_article_text
+text_list = df.cleaned_article_text
 resolved_text_list = []
 
 articles_pos_list = []
 
-articles_sentence_list = all_article_list_full.sentence_list
+articles_sentence_list = df.sentence_list
 
 articles_stripped_sentence_list = []
 articles_resolved_sentence_list = []
@@ -57,7 +57,7 @@ for i,text in enumerate(text_list):
     if len(resolved_sentence_list) != len(sentence_list):
         print('index: ' + str(i) + ' resolved_length: ' + str(len(resolved_sentence_list)))
         print('striped (original) length: ' + str(len(sentence_list)))
-        print(all_article_list_full['title'].iloc[i])
+        print(df['title'].iloc[i])
         indices_to_drop.append(i)
         store_text1=''
         store_text2=''
@@ -80,15 +80,15 @@ for i,text in enumerate(text_list):
     if len(resolved_text_list) % 100 ==0:
         print(len(resolved_text_list))
 
-all_article_list_full['resolved_text_list'] = resolved_text_list
-all_article_list_full['resolved_sentence_list'] = articles_resolved_sentence_list
+df['resolved_text_list'] = resolved_text_list
+df['resolved_sentence_list'] = articles_resolved_sentence_list
 print('dropping no. indices:' + str(len(indices_to_drop)))
 for i in indices_to_drop:
     print(i)
-all_article_list_full.drop(indices_to_drop)
-all_article_list_full.reset_index(drop=True)
-df_to_store = all_article_list_full[[
+df=df.drop(indices_to_drop)
+df=df.reset_index(drop=True)
+df_to_store = df[[
     'title', 'bytes', 'resolved_text_list', 'cleaned_article_text', 'sub_texts', 'resolved_sentence_list','sentence_list',
     'quot_truth_list', 'link_truth_list', 'linkname_truth_list'
 ]]
-df_to_store.to_csv('../../data/2_articles_labeled_cleaned.csv',index=False)
+df_to_store.to_csv('../../data/3_articles_resolved_labeled_cleaned.csv',index=False)

@@ -17,7 +17,7 @@ import spacy
 
 nlp = spacy.load("de_core_news_sm")
 
-df = pd.read_csv('../../data/all_articles_resolved_truth_cleaned_new.csv')
+df = pd.read_csv('../../data/3_articles_resolved_labeled_cleaned.csv')
 
 df['sentence_list'] = df['sentence_list'].apply(
     ast.literal_eval)
