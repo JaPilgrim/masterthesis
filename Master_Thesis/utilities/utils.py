@@ -13,6 +13,7 @@ import requests
 from bs4 import BeautifulSoup
 from sklearn import metrics
 from sklearn.metrics import accuracy_score
+from sklearn.metrics import f1_score 
 from sklearn.model_selection import train_test_split
 
 nltk.download('stopwords')
@@ -33,14 +34,14 @@ def get_sentence_pos_str(sentence: str, nlp: Language) -> str:
     Returns:
         str: String of POS tag sequence.
     """
-    doc = nlp(sentence)
+    doc = nlp(str(sentence))
     sentence_pos = ""
     for token in doc:
         sentence_pos = sentence_pos + " " + token.pos_
     return sentence_pos
 
 
-def prefix_on_substring(word_list: List, free_text: str,prefix=" ++ ") -> str:
+def prefix_on_substring(word_list: List, free_text: str, prefix=" ++ ") -> str:
     """Adds a prefix in front o every occurence of an element of word_list in free_text.
 
     Args:
@@ -68,14 +69,14 @@ def get_sentence_pos_list(sentence, nlp: Language) -> list[str]:
         list[str]: List of String POS tags.
     """
 
-    doc = nlp(sentence)
+    doc = nlp(str(sentence))
     sentence_pos = []
     for token in doc:
         sentence_pos.append(str(token.pos_))
     return sentence_pos
 
 
-def compute_accuracy_AUC(probabilities: pd.Series, prediction: pd.Series) -> tuple:
+def compute_accuracy_AUC_f1(prediction: pd.Series, probabilities: pd.Series) -> tuple:
     """Computes and returns AUC & accuracy. 
     Args:
         ground_truth (list[bool]): Ground truth bool
@@ -88,8 +89,13 @@ def compute_accuracy_AUC(probabilities: pd.Series, prediction: pd.Series) -> tup
     ground_truth = np.where(probabilities >= 0.5, 1, 0)
 
     accuracy = accuracy_score(ground_truth, prediction)
-    auc = metrics.roc_auc_score(ground_truth, prediction)
-    return accuracy, auc
+    f1_val = f1_score(ground_truth, prediction)
+    try:
+        auc = metrics.roc_auc_score(ground_truth, prediction)
+    except:
+        auc = 0
+
+    return accuracy, auc, f1_val
 
 
 def plot_compute_AUC(ground_truth: pd.Series, prediction: pd.Series) -> tuple:
@@ -119,58 +125,58 @@ def create_abbreviation_dict() -> dict:
         dict: Keys: Abbreviation - Values: Full Text
     """
     abbr_to_text = {
-        'a.':'ausser',
+        'a.': 'ausser',
         'a. D.': 'ausser Dienst',
         'a. d.': 'ausser Dienst',
-        'Abs.':'Absatz',
-        'abs.':'absatz',
+        'Abs.': 'Absatz',
+        'abs.': 'absatz',
         'Abb.': 'Abbildung',
-        'A.G.':'Aktiengesellschafft',
+        'A.G.': 'Aktiengesellschafft',
         'bzw.': 'beziehungsweise',
-        'Bd.':'Band',
+        'Bd.': 'Band',
         'ca.': 'circa',
         'cf.': 'confer',
         'Co.': 'Company',
         'co.': 'company',
-        'Dtschl.':'Deutschland',
-        'dtsch.':'dtsch.',
-        'europ.':'europäisch',
-        'h.':'heißt',
+        'Dtschl.': 'Deutschland',
+        'dtsch.': 'dtsch.',
+        'europ.': 'europäisch',
+        'h.': 'heißt',
         'd. h.': 'das heisst',
-        '(d.':'das',
+        '(d.': 'das',
         'Dr.': 'Doktor',
-        'Dok.':'Dokument',
+        'Dok.': 'Dokument',
         'etc.': 'et cetera',
-        'Ed.':'Edition',
-        'engl.':'englisch',
-        'Engl.':'Englisch',
-        'ff.':'fortfolgende',
-        'geb.':'geboren',
+        'Ed.': 'Edition',
+        'engl.': 'englisch',
+        'Engl.': 'Englisch',
+        'ff.': 'fortfolgende',
+        'geb.': 'geboren',
         'ggf.': 'gegebenenfalls',
-        'K.G.':'Kommanditgesellschaft',
+        'K.G.': 'Kommanditgesellschaft',
         'i.d.R.': 'in der Regel',
-        'i.':'in',
-        'd.':'der',
-        'R.':'Regel',
+        'i.': 'in',
+        'd.': 'der',
+        'R.': 'Regel',
         'i.A.': 'im Allgemeinen',
         'Ph.D.': 'Doctor of Philosophy',
-        'Ph.':'Philosophy',
-        'D.':'Doctor',
+        'Ph.': 'Philosophy',
+        'D.': 'Doctor',
         'Prof.': 'Professor',
         'prof.': 'Professor',
-        'Nr.':'Nummer',
-        'nr.':'Nummer',
-        'S.A.':'Sturmabteilung',
-        'S.':'Seite',
+        'Nr.': 'Nummer',
+        'nr.': 'Nummer',
+        'S.A.': 'Sturmabteilung',
+        'S.': 'Seite',
         'usw.': 'und so weiter',
         'v.a.': 'vor allem',
-        'v. A.':'vor Allem',
-        'v.':'vor',
-        'A.':'Allem',
+        'v. A.': 'vor Allem',
+        'v.': 'vor',
+        'A.': 'Allem',
         'z. B.': 'zum Beispiel',
-        'z.':'zum',
-        'B.':'Beispiel',
-        'T.':'Teil',
+        'z.': 'zum',
+        'B.': 'Beispiel',
+        'T.': 'Teil',
         'z. T.': 'zum Teil',
     }
     return abbr_to_text
@@ -233,28 +239,28 @@ def fetch_wiki_fulltext_linklabeled(subject='Maschinelles Lernen'):
 
         p_elements = soup.find_all('p')
 
-        linked_words =[]
+        linked_words = []
         for p in p_elements:
             # Iterate over each child element of the p element
             for child in p.children:
-                if child.name  in (None,'i','b') :
+                if child.name in (None, 'i', 'b'):
                     # If tag is from free-text (none, italic or bold), add @@ behind linked words
                     # and append
-                    linked_text = prefix_on_substring(linked_words,child.text,'++')
+                    linked_text = prefix_on_substring(linked_words, child.text, '++')
                     processed_text += linked_text
                 elif child.name == 'sup':
                     # If tag is citation
                     # Only add the @@
-                    if processed_text[-1]=='.':
-                        processed_text= processed_text[:-1] + "@@" + '.'
+                    if processed_text[-1] == '.':
+                        processed_text = processed_text[:-1] + "@@" + '.'
                     else:
                         processed_text += "@@"
                 elif child.name == "a":
                     # If the child element is an "a" tag (link here), add a "@@" after it
                     # Also add title of linked page, and link-text with leading space
                     # and trailing space/comma/fullstop to linked_words list
-                    punct_removed_text = child.text.replace('.','')
-                    cleaned_link_text = punct_removed_text.replace('!','')
+                    punct_removed_text = child.text.replace('.', '')
+                    cleaned_link_text = punct_removed_text.replace('!', '')
                     processed_text += cleaned_link_text + "=="
                     linked_words.append(" " + child.get("title") + " ")
                     linked_words.append(" " + child.get("title") + ",")
@@ -350,8 +356,10 @@ def clean_special_characters(text: str) -> str:
     new_text = new_text.replace('\r', '')
     new_text = new_text.replace('\n', ' ')
     new_text = new_text.replace('\n', ' ')
-    new_text= new_text.replace("[", "").replace("{", "").replace("*", "").replace("]","").replace('*',"")
-    new_text= new_text.replace("(", "").replace(")", "")
+    new_text = new_text.replace("[", "").replace("{", "").replace("*",
+                                                                  "").replace("]",
+                                                                              "").replace('*', "")
+    new_text = new_text.replace("(", "").replace(")", "")
     return new_text
 
 

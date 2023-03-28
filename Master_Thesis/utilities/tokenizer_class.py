@@ -2,11 +2,11 @@ import pandas as pd
 from nltk.corpus import stopwords
 from tensorflow.keras.preprocessing.text import Tokenizer
 
-from utils import *
+from back_classes.utils import *
 
 
 class TokenizerClass():
-    def __init__(self, stopwords=stopwords.words("german"), tokenizer=Tokenizer) -> None:
+    def __init__(self, stopwords=stopwords.words("german"), tokenizer=Tokenizer()) -> None:
         self.tokenizer = tokenizer
         self.stopwords = stopwords
         self.num_unique_words = 0
@@ -26,7 +26,7 @@ class TokenizerClass():
         Returns:
             int: Number of unique words
         """
-        self.tokenizer = self.tokenizer(num_words=self.num_unique_words)
+        self.tokenizer = Tokenizer(num_words=self.num_unique_words)
         self.tokenizer.fit_on_texts(texts=train_sentence_list)
         return self.num_unique_words
 

@@ -1,6 +1,21 @@
+"""Adds reference resolution to the data.
+1. Loops through all articles
+2. Builds pipeline with spacy coreferee
+3. Transforms an article full-text to a spacy-doc object.
+3. Replaces refernces with strongest representation
+    -Set up index list of tokens
+    -loops throgh chain and chooses strongest chain member
+    -If neither new nor old ref contains full stop, replace index in token index list
+    -Set up new doc with index list
+    -Get text of that doc
+    -Split again at". "
+    -If sentence number doesnt match, drop whole row (only twice)
+4. Store as df row=articles
+    -added resolved_sentence_list and resolved_text_list
+"""
 import pandas as pd
 import spacy
-from utils import *
+from back_classes.utils import *
 import spacy
 import coreferee
 import de_core_news_sm
@@ -64,7 +79,6 @@ for i,text in enumerate(text_list):
         for item1, item2 in zip_longest(resolved_sentence_list,striped_sentence_list):
             if (Levenshtein.ratio(item1,item2)<0.95):
                 i+=1
-
                 if (Levenshtein.ratio(item1, item2) < 0.5):
                     print(store_text1)
                     print(store_text2)

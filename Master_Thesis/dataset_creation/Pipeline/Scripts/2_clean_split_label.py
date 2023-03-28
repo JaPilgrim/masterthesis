@@ -1,16 +1,26 @@
 """Reads a csv that contains a list of all articles with their fulltext.
 1. Cleans the texts.
-2. Splits into sentences.
-3. Uses the uses marks to determine truth status by dataset type. 
-    - Quotation labeled
-    - linklabeled
-    - linknamelabeled
+    -replaces abbreviations
+    -cleans special characters (except @@ == ++)
+
+2. Splits into sentences
+    -after ". "
+    -removes all remaining full stops
+    - in df stored as list of lists
+
+3. Uses the  marks to determine truth status by dataset type. 
+    @@ Quotation labeled
+    == linklabeled
+    ++ linknamelabeled
+    
+    adds following 
+ 
 4. Joins split sentences for clean text version per article.
-5. Merges everything into df and stores as .csv
+5. Merges everything into df and stores as .csv where articles = rows
 """
 import pandas as pd
 
-from utils import *
+from back_classes.utils import *
 
 all_article_list = pd.read_csv('../../data/all_articles_list.csv')
 

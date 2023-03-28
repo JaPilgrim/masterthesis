@@ -1,6 +1,8 @@
 *.DS_store
-data/.**
-data/
+**.DS_store/**
+data/data_files/**
+data/wandb/**
+data/wandb/*
 
 ../againlonelypy
 
@@ -11,6 +13,7 @@ logs
 # Ignore the build directory
 /dist
 
+# Ignore wandb
 /wandb
 weight_n_b/*
 weight_n_b/.**
@@ -19,4 +22,13 @@ __pycache__/*
 */__pycache__/*
  /weight_n_b/.*
 weight_n_b
+
+# Ignore old files
+old_files/
+old_files
+
+
+**/ipynb_checkpoints/**
+**/__pycache__/**
+**/-vscode/**
 

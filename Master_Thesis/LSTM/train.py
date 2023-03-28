@@ -14,7 +14,7 @@ from tensorflow.keras import callbacks, layers
 
 from back_classes.sentence_classifier import LSTMDataset
 from back_classes.tokenizer_class import TokenizerClass
-from utils import *
+from back_classes.utils import *
 
 # sweep_configuration = {
 #     'method': 'bayes',

@@ -1,10 +1,19 @@
+    """Gets the POS-sequence for every sentence.
+    1. For resolved- & non-resolved sentences seperately
+    2. Loop through all articles>sentences
+    3. Get POS-sequence (as string per sentence)
+    4. Check if sentence count still matches, otherwise drop (didnt happen)
+    5. Store with 2 separate text columns still row=article
+        -pos_resolved_sentence_list
+        -pos_sentence_list
+    """
 import os
 import sys
 import ast
 sys.path.append("..")
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 import pandas as pd
-from utils import *
+from back_classes.utils import *
 import string
 
 import spacy

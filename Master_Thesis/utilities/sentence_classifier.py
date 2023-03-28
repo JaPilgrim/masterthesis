@@ -1,4 +1,5 @@
 import datetime
+from ast import literal_eval
 
 import numpy as np
 import tensorflow as tf
@@ -10,7 +11,7 @@ from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.preprocessing.text import Tokenizer
 
 from back_classes.tokenizer_class import TokenizerClass
-from utils import *
+from back_classes.utils import *
 
 
 class LSTMDataset():
@@ -42,7 +43,7 @@ class LSTMDataset():
         self.test_df = self.train_df.copy()
         self.val_df = self.train_df.copy()
 
-    def split_off_testset_internal(self, path, val_share=0.2, random_state=2):
+    def split_off_testset_external(self, path, val_share=0.2, random_state=2):
         """Takes a portion of loaded_df and uses it as test_df. Updates whole_df accordingly
 
         Args:
@@ -94,7 +95,7 @@ class LSTMDataset():
             Test DF: Test Data Set DF
             Whole DF: The Whole Data Set DF
         """
-
+        
         self.whole_df[self.text_column] = self.tokenizer_class.remove_stopwords_series(
             sentence_list=self.whole_df[self.text_column])
         self.tokenizer_class.set_unique_words(sentence_list=self.whole_df[self.text_column])
@@ -104,7 +105,7 @@ class LSTMDataset():
                                                      random_state=random_state)
 
         self.tokenizer_class.fit_tokenizer_on_train(self.train_df[self.text_column].tolist())
-        
+
         self.train_padded = self.raw_text_to_padded_sequences(self.train_df[self.text_column])
         self.val_padded = self.raw_text_to_padded_sequences(self.val_df[self.text_column])
 
@@ -157,9 +158,12 @@ class LSTMDataset():
         loaded_df = pd.read_csv(dataset_path, dtype={'text': 'str'})
         self.loaded_df = loaded_df[[self.text_column, self.label_column]]
 
-        transfer_df = pd.read_csv(transferset_path, sep=',', dtype={'text': 'str'})
-
-        self.transfer_df = transfer_df[[self.text_column, self.label_column]]
+        self.transfer_df = pd.read_csv(
+            transferset_path,
+            sep=',',
+            dtype={'text': 'str'},
+            converters={'pos_list': literal_eval},
+        )
 
         self.test_df = self.transfer_df.copy()
         self.whole_df = self.loaded_df.copy()
@@ -195,6 +199,7 @@ class LSTMDataset():
         Returns:
             list: List of tokens (numbers), filled up to padding length with zeroes.
         """
+        text_list = [str(s) for s in text_list]
         sequence_list = self.tokenizer_class.tokenizer.texts_to_sequences(text_list)
         padded_list = pad_sequences(sequence_list,
                                     maxlen=self.padding_length,
@@ -212,15 +217,22 @@ class LSTMDataset():
             float: accuracy
             float: AUC
         """
-        test_accuracy, test_AUC = self._predict_and_compute_test(self.test_df, model)
-        transfer_accuracy, transfer_AUC = self._predict_and_compute_test(self.transfer_df, model)
-        return test_accuracy, test_AUC, transfer_accuracy, transfer_AUC
+        test_accuracy, test_AUC,test_f1 = self._predict_and_compute_test(self.test_df, model)
+        transfer_accuracy, transfer_AUC,transfer_f1 = self._predict_and_compute_test(self.transfer_df, model)
+        return test_accuracy, test_AUC, test_f1, transfer_accuracy, transfer_AUC,transfer_f1
 
     def _predict_and_compute_test(self, df, model: keras.Model):
-        padded_list = self.raw_text_to_padded_sequences(df[self.text_column])
-        df['predictions'] = list(model.predict(padded_list))
-        accuracy, AUC = compute_accuracy_AUC(df[self.label_column], df['predictions'])
-        return accuracy, AUC
+
+        if isinstance(df[self.text_column].iloc[0], str):
+            padded_list = np.array(self.raw_text_to_padded_sequences(df[self.text_column]))
+        else:
+            padded_list = np.array(df[self.text_column])
+
+        df['probabilities'] = np.array(model.predict(padded_list))
+        
+        accuracy, AUC, f1_score = compute_accuracy_AUC_f1(df[self.label_column],
+                                                          df['probabilities'])
+        return accuracy, AUC, f1_score
 
     # def predict_label(self, text_list: list[str]) -> list[bool]:
     #     """Predits the label column. Stores test data & predictino to self.
