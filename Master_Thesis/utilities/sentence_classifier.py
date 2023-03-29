@@ -10,8 +10,8 @@ from tensorflow.keras import callbacks, layers
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.preprocessing.text import Tokenizer
 
-from back_classes.tokenizer_class import TokenizerClass
-from back_classes.utils import *
+from utilities.tokenizer_class import TokenizerClass
+from utilities.utils import *
 
 
 class LSTMDataset():
@@ -95,7 +95,7 @@ class LSTMDataset():
             Test DF: Test Data Set DF
             Whole DF: The Whole Data Set DF
         """
-        
+
         self.whole_df[self.text_column] = self.tokenizer_class.remove_stopwords_series(
             sentence_list=self.whole_df[self.text_column])
         self.tokenizer_class.set_unique_words(sentence_list=self.whole_df[self.text_column])
@@ -229,7 +229,7 @@ class LSTMDataset():
             padded_list = np.array(df[self.text_column])
 
         df['probabilities'] = np.array(model.predict(padded_list))
-        
+
         accuracy, AUC, f1_score = compute_accuracy_AUC_f1(df[self.label_column],
                                                           df['probabilities'])
         return accuracy, AUC, f1_score

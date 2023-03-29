@@ -2,7 +2,7 @@ import pandas as pd
 from nltk.corpus import stopwords
 from tensorflow.keras.preprocessing.text import Tokenizer
 
-from back_classes.utils import *
+from utilities.utils import *
 
 
 class TokenizerClass():

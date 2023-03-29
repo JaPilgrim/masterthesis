@@ -23,6 +23,9 @@ __pycache__/*
  /weight_n_b/.*
 weight_n_b
 
+*/wandb/**
+**/wand/**
+
 # Ignore old files
 old_files/
 old_files

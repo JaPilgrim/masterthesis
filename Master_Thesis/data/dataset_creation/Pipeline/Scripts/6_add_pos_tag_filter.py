@@ -8,14 +8,19 @@
 
 
 import pandas as pd
+from utilities.utils import *
 
-from back_classes.utils import *
-
-df_read = pd.read_csv('../../data/5.1_sentences_exploded.csv')
+df_read = pd.read_csv('../../../data_files/pipeline_steps/5.1_sentences_exploded.csv')
 df = df_read.copy()
 pos_list=['pos_nonresolved_text', 'pos_resolved_text']
 
 label_list = ['quot_label', 'link_label', 'namelink_label']
+
+
+columns = ['pos_nonresolved_text', 'pos_resolved_text']
+for name in columns:
+    df[name] = df[name].str.replace('SPACE', '')
+    df[name] = df[name].str.replace('  ', '')
 
 for pos_text in pos_list:
 
@@ -32,9 +37,11 @@ for pos_text in pos_list:
         name=f"{pos_text[:-5]}_{label[:-6]}_filter"
         # group by pos_seq and apply the custom aggregation function to calculate pos_union
         pos_union = df.groupby(pos_text).apply(pos_union_func).reset_index(name=name)
-        
+
         # merge the pos_union back into the original dataframe
         df = df.merge(pos_union, on=pos_text, how='left')
 
-df.to_csv('../../data/6.1_sentences_filtersadded.csv')
 
+
+
+df.to_csv('../../../data_files/pipeline_steps/6.1_sentences_filtersadded5.csv', index=False)

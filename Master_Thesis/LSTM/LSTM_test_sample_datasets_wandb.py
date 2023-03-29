@@ -13,9 +13,9 @@ from sklearn.metrics import accuracy_score
 from tensorflow import keras
 from tensorflow.keras import callbacks, layers
 import wandb
-from back_classes.sentence_classifier import LSTMDataset
-from back_classes.tokenizer_class import TokenizerClass
-from back_classes.utils import *
+from utilities.sentence_classifier import LSTMDataset
+from utilities.tokenizer_class import TokenizerClass
+from utilities.utils import *
 import os
 
 for filename in os.listdir('2nd_test_dataset_samples/'):
