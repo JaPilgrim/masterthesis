@@ -1,3 +1,5 @@
+"""Module implementing the tokenizer class used for LSTM processing
+    """
 import pandas as pd
 from nltk.corpus import stopwords
 from tensorflow.keras.preprocessing.text import Tokenizer
@@ -35,10 +37,10 @@ class TokenizerClass():
         num_unique_words & returns it.
 
         Args:
-            sentence_list (list[str]): _description_
+            sentence_list (list[str]): List of sentences.
 
         Returns:
-            int: _description_
+            int: Number of unique words.
         """
         counter = counter_word(sentence_list)
         self.num_unique_words = len(counter)

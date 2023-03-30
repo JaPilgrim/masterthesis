@@ -1,27 +1,24 @@
-import hashlib
-import json
-import random as python_random
+"""To test & compare all 48 datasets in small samples. To be run with wandb agent.
+    """
+
 import numpy as np
-import keras
-import optuna
 import pandas as pd
-import tensorflow as tf
-import yaml
+import wandb
 from keras.callbacks import EarlyStopping
-from numpy.random import seed
-from sklearn.metrics import accuracy_score
+from sklearn.utils.class_weight import compute_class_weight
 from tensorflow import keras
 from tensorflow.keras import callbacks, layers
-import wandb
-from utilities.sentence_classifier import LSTMDataset
-from utilities.tokenizer_class import TokenizerClass
+
+from utilities.lstm_data_handler import LSTMDataHandler
 from utilities.utils import *
-import os
-from sklearn.utils.class_weight import compute_class_weight
 
 sweep_configuration = {
     'method': 'grid',
     'name': 'sweep_same_rows',
+    'metric': {
+        'goal': 'maximize',
+        'name': 'test_acc'
+    },
     'parameters': {
         'filename': {
             'values': [
@@ -49,6 +46,30 @@ sweep_configuration = {
                 'pos_nonresolved_namelink_nofilter_equal.csv',
                 'pos_resolved_namelink_filter_equal.csv',
                 'pos_resolved_namelink_nofilter_equal.csv',
+                'nopos_resolved_quot_filter_random.csv',
+                'nopos_resolved_quot_nofilter_random.csv',
+                'nopos_nonresolved_quot_filter_random.csv',
+                'nopos_nonresolved_quot_nofilter_random.csv',
+                'pos_nonresolved_quot_filter_random.csv',
+                'pos_nonresolved_quot_nofilter_random.csv',
+                'pos_resolved_quot_filter_random.csv',
+                'pos_resolved_quot_nofilter_random.csv',
+                'nopos_resolved_link_filter_random.csv',
+                'nopos_resolved_link_nofilter_random.csv',
+                'nopos_nonresolved_link_filter_random.csv',
+                'nopos_nonresolved_link_nofilter_random.csv',
+                'pos_nonresolved_link_filter_random.csv',
+                'pos_nonresolved_link_nofilter_random.csv',
+                'pos_resolved_link_filter_random.csv',
+                'pos_resolved_link_nofilter_random.csv',
+                'nopos_resolved_namelink_filter_random.csv',
+                'nopos_resolved_namelink_nofilter_random.csv',
+                'nopos_nonresolved_namelink_filter_random.csv',
+                'nopos_nonresolved_namelink_nofilter_random.csv',
+                'pos_nonresolved_namelink_filter_random.csv',
+                'pos_nonresolved_namelink_nofilter_random.csv',
+                'pos_resolved_namelink_filter_random.csv',
+                'pos_resolved_namelink_nofilter_random.csv',
             ]
         }
     }
@@ -59,7 +80,7 @@ sweep_id = wandb.sweep(sweep=sweep_configuration, project='equal_rows_swipe_test
 def main():
     run = wandb.init()
     filename = wandb.config.filename
-    lstm_dataset = LSTMDataset()
+    lstm_dataset = LSTMDataHandler()
     lstm_dataset.load_datasets(
         f"../data/data_files/test_samples/3rd_test_dataset_samples/{filename}",
         transferset_path='../data/data_files/annotated_pos_test.csv')
@@ -102,8 +123,8 @@ def main():
     test_acc, test_AUC, test_f1, transfer_acc, transfer_AUC, transfer_f1 = lstm_dataset.evaluate_model(
         model)
 
-    a = len(lstm_dataset.train_df[lstm_dataset.train_df['label'] == False])
-    b = len(lstm_dataset.train_df[lstm_dataset.train_df['label'] == True])
+    false_samples = len(lstm_dataset.train_df[lstm_dataset.train_df['label'] == False])
+    true_samples = len(lstm_dataset.train_df[lstm_dataset.train_df['label'] == True])
     data_meta_info = filename.split('_')
     wandb.log({
         'pos': data_meta_info[0],
@@ -117,8 +138,8 @@ def main():
         'transfer_acc': transfer_acc,
         'transfer_AUC': transfer_AUC,
         'transfer_f1': transfer_f1,
-        'class_false': a,
-        'class_true': b
+        'class_false': false_samples,
+        'class_true': true_samples
     })
 
 

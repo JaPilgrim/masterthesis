@@ -12,9 +12,9 @@ from numpy.random import seed
 from tensorflow import keras
 from tensorflow.keras import callbacks, layers
 
-from back_classes.sentence_classifier import LSTMDataset
-from back_classes.tokenizer_class import TokenizerClass
-from back_classes.utils import *
+from utilities.lstm_data_handler import LSTMDataHandler
+from utilities.tokenizer_class import TokenizerClass
+from utilities.utils import *
 
 # sweep_configuration = {
 #     'method': 'bayes',
@@ -90,7 +90,7 @@ def evaluate_model(model, claim_extract):
 
 def init_classes(df_train, eval_share):
     tokenizer = TokenizerClass()
-    claim_extract = LSTMDataset(tokenizer_class=tokenizer)
+    claim_extract = LSTMDataHandler(tokenizer_class=tokenizer)
     claim_extract.whole_df_to_preprocessed_train_val(df_train, eval_share)
     return claim_extract
 

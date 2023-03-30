@@ -20,9 +20,9 @@
 """
 import pandas as pd
 
-from back_classes.utils import *
+from utilities.utils import *
 
-all_article_list = pd.read_csv('../../data/all_articles_list.csv')
+all_article_list = pd.read_csv('../../../data_files/1_all_articles_fetched.csv')
 
 text_list = all_article_list.sub_texts
 cleaned_text_list = []

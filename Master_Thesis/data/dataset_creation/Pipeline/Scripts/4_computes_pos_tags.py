@@ -1,4 +1,4 @@
-    """Gets the POS-sequence for every sentence.
+"""Gets the POS-sequence for every sentence.
     1. For resolved- & non-resolved sentences seperately
     2. Loop through all articles>sentences
     3. Get POS-sequence (as string per sentence)
@@ -7,26 +7,26 @@
         -pos_resolved_sentence_list
         -pos_sentence_list
     """
+import ast
 import os
 import sys
-import ast
+
 sys.path.append("..")
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
-import pandas as pd
-from back_classes.utils import *
+import importlib.metadata as importlib_metadata
 import string
 
+import pandas as pd
 import spacy
 
-
-import importlib.metadata as importlib_metadata
+from utilities.utils import *
 
 importlib_metadata.version('tqdm')
 import spacy
 
 nlp = spacy.load("de_core_news_sm")
 
-df = pd.read_csv('../../data/3_articles_resolved_labeled_cleaned.csv')
+df = pd.read_csv('../../../data_files/pipeline_steps/3_articles_resolved_labeled_cleaned.csv')
 
 df['sentence_list'] = df['sentence_list'].apply(
     ast.literal_eval)
@@ -79,4 +79,4 @@ for i, sentence_list in enumerate(article_resolved_sentence_list):
 
 df['pos_resolved_sentence_list'] = pos_resolved_sentence_list
 
-df.to_csv('../../data/4_pos_resolved_truth_cleaned.csv',index=False)
+df.to_csv('../../../data_files/pipeline_steps/4_pos_resolved_truth_cleaned.csv', index=False)

@@ -1,20 +1,13 @@
-import datetime
 from ast import literal_eval
 
-import numpy as np
-import tensorflow as tf
-from keras.callbacks import EarlyStopping
-from sklearn.metrics import accuracy_score
 from tensorflow import keras
-from tensorflow.keras import callbacks, layers
 from tensorflow.keras.preprocessing.sequence import pad_sequences
-from tensorflow.keras.preprocessing.text import Tokenizer
 
 from utilities.tokenizer_class import TokenizerClass
 from utilities.utils import *
 
 
-class LSTMDataset():
+class LSTMDataHandler():
     def __init__(self,
                  val_share=0.2,
                  text_column="text",

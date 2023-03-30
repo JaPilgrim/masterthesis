@@ -15,7 +15,7 @@
 """
 import pandas as pd
 import spacy
-from back_classes.utils import *
+from utilities.utils import *
 import spacy
 import coreferee
 import de_core_news_sm
@@ -26,7 +26,7 @@ import Levenshtein
 nlp = spacy.load('de_core_news_sm')
 nlp.add_pipe('coreferee')
 
-df = pd.read_csv('../../data/2_articles_labeled_cleaned.csv')
+df = pd.read_csv('../../../data_files/pipeline_steps/2_articles_labeled_cleaned.csv')
 df['sentence_list'] = df['sentence_list'].apply(
     ast.literal_eval)
 
@@ -105,4 +105,4 @@ df_to_store = df[[
     'title', 'bytes', 'resolved_text_list', 'cleaned_article_text', 'sub_texts', 'resolved_sentence_list','sentence_list',
     'quot_truth_list', 'link_truth_list', 'linkname_truth_list'
 ]]
-df_to_store.to_csv('../../data/3_articles_resolved_labeled_cleaned.csv',index=False)
+df_to_store.to_csv('../../../data_files/pipeline_steps/3_articles_resolved_labeled_cleaned.csv',index=False)

@@ -8,9 +8,9 @@ import ast
 
 import pandas as pd
 
-from back_classes.utils import *
+from utilities.utils import *
 
-df = pd.read_csv('../../data/4_pos_resolved_truth_cleaned.csv')
+df = pd.read_csv('../../../data_files/pipeline_steps/4_pos_resolved_truth_cleaned.csv')
 
 rename = {
     'resolved_sentence_list': 'nopos_resolved_text',
@@ -66,5 +66,5 @@ df_sentences = df_sentences.rename(columns=rename)
 # df_sentences['pos_sentence_list'] = pos_sentences_list
 # df_sentences['pos_resolved_sentence_list'] = pos_resolved_sentences_list
 print(df_sentences.columns)
-df_sentences.to_csv('../../data/5.1_sentences_exploded.csv')
-df_articles.to_csv('../../data/5.2_article_info.csv')
+df_sentences.to_csv('../../../data_files/pipeline_steps/5.1_sentences_exploded.csv')
+df_articles.to_csv('../../../data_files/pipeline_steps/5.2_article_info.csv')

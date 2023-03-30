@@ -6,12 +6,12 @@ import pandas as pd
 import torch
 from datasets import Dataset
 from evaluate import load
+from sklearn.metrics import (accuracy_score, f1_score, precision_score, recall_score)
 from transformers import AutoTokenizer, DataCollatorWithPadding
 
-from utilities.sentence_classifier import LSTMDataset
+from utilities.lstm_data_handler import LSTMDataHandler
 from utilities.tokenizer_class import TokenizerClass
 from utilities.utils import *
-from sklearn.metrics import accuracy_score, precision_score, recall_score,f1_score
 
 trans_tokenizer = AutoTokenizer.from_pretrained('distilbert-base-german-cased')
 import os
@@ -113,7 +113,6 @@ callbacks = [
 # element_val = next(iter(tf_validation_set))
 # feature_val, label_val = element_val
 
-
 # feature_shape = feature_train.shape
 # label_shape = label_train.shape
 
@@ -142,7 +141,6 @@ print(tf_validation_set)
 model.summary()
 model.fit(x=tf_train_set, validation_data=tf_validation_set, epochs=num_epochs)
 
-
 sentence_list = list(test_set['text'])
 tokenized = trans_tokenizer(sentence_list, return_tensors='np', padding='longest')
 
@@ -156,9 +154,6 @@ accuracy = accuracy_score(ground_truth, predictions_list)
 precision = precision_score(ground_truth, predictions_list)
 recall = recall_score(ground_truth, predictions_list)
 f1_value = f1_score(ground_truth, predictions_list)
-
-
-
 
 print(accuracy)
 print(precision)

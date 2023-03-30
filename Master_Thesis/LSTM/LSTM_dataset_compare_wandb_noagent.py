@@ -1,32 +1,33 @@
 import hashlib
 import json
+import os
 import random as python_random
-import numpy as np
+
 import keras
+import numpy as np
 import optuna
 import pandas as pd
 import tensorflow as tf
+import wandb
 import yaml
 from keras.callbacks import EarlyStopping
 from numpy.random import seed
 from sklearn.metrics import accuracy_score
 from tensorflow import keras
 from tensorflow.keras import callbacks, layers
-import wandb
-from utilities.sentence_classifier import LSTMDataset
+
+from utilities.lstm_data_handler import LSTMDataHandler
 from utilities.tokenizer_class import TokenizerClass
 from utilities.utils import *
-import os
 
 for filename in os.listdir('2nd_test_dataset_samples/'):
     if not filename.endswith('.csv'):
         continue
-    wandb.init(project='large_sample_long',
-               config={'filename':filename
-               })
+    wandb.init(project='large_sample_long', config={'filename': filename})
     print(filename)
-    lstm_dataset = LSTMDataset()
-    lstm_dataset.load_datasets(f"2nd_test_dataset_samples/{filename}",transferset_path='data_files/annotated_pos_test.csv')
+    lstm_dataset = LSTMDataHandler()
+    lstm_dataset.load_datasets(f"2nd_test_dataset_samples/{filename}",
+                               transferset_path='data_files/annotated_pos_test.csv')
 
     lstm_dataset.split_off_testset_internal()
     if filename[:3] + 'pos':
@@ -55,8 +56,8 @@ for filename in os.listdir('2nd_test_dataset_samples/'):
                         callbacks=[es],
                         epochs=10)
 
-    test_acc, test_AUC, test_f1, transfer_acc, transfer_AUC, transfer_f1 = lstm_dataset.evaluate_model(model)
-    
+    test_acc, test_AUC, test_f1, transfer_acc, transfer_AUC, transfer_f1 = lstm_dataset.evaluate_model(
+        model)
 
     a = len(lstm_dataset.train_df[lstm_dataset.train_df['label'] == False])
     b = len(lstm_dataset.train_df[lstm_dataset.train_df['label'] == True])
@@ -64,9 +65,9 @@ for filename in os.listdir('2nd_test_dataset_samples/'):
     wandb.log({
         'pos': data_meta_info[0],
         'resolved': data_meta_info[1],
-        'labeling':data_meta_info[2],
-        'filter':data_meta_info[3],
-        'sampling_method':data_meta_info[4],
+        'labeling': data_meta_info[2],
+        'filter': data_meta_info[3],
+        'sampling_method': data_meta_info[4],
         'test_acc': test_acc,
         'test_AUC': test_AUC,
         'test_f1': test_f1,

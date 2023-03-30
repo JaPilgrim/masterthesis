@@ -1,10 +1,14 @@
 *.DS_store
 **.DS_store/**
-data/data_files/**
-data/wandb/**
-data/wandb/*
+__pycache__/.*
+__pycache__/*
+*/__pycache__/*
+**/__pycache__/**
+**/ipynb_checkpoints/**
+**/-vscode/**
 
-../againlonelypy
+# Ignore data files 
+data/data_files/*
 
 # Ignore Logs
 logs
@@ -17,21 +21,11 @@ logs
 /wandb
 weight_n_b/*
 weight_n_b/.**
-__pycache__/.*
-__pycache__/*
-*/__pycache__/*
- /weight_n_b/.*
+/weight_n_b/.*
 weight_n_b
-
 */wandb/**
 **/wand/**
 
-# Ignore old files
-old_files/
-old_files
 
 
-**/ipynb_checkpoints/**
-**/__pycache__/**
-**/-vscode/**
 
