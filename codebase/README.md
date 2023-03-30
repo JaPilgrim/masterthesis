@@ -6,7 +6,7 @@ Contains everything for reproducable creation of the different datasets
 ### **LSTM** 
 Contains scripts & notebooks related to Long Short Term Memory RNN application for this task.
 
-### **Transformers** 
+### **Transformer** 
 Contains everything related to pretrained Transformers application for this task.
 
 ### **utilities** 
