@@ -8,7 +8,10 @@ __pycache__/*
 **/-vscode/**
 
 # Ignore data files 
-data/data_files/*
+
+data/data_files/fang-covid-main/*
+*.json
+*.csv
 
 # Ignore Logs
 logs
