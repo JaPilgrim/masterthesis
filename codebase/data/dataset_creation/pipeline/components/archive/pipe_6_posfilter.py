@@ -1,24 +1,27 @@
-""" Filters overlapping pos-sequence from the non-claim class.
-1. Loops through text & label
-2. Groups by pos_tag
-3. Adds True is pos-seq is present in both classes
-4. for each pos-text <-> label combination adds one column:
-    - {text}_{label}_filter 
+""" 
     """
 
 
 import pandas as pd
 from utilities.utils import *
 
-# folder = '../../../data_files/pipeline_steps/excellent_articles/'
-# input_path = f"{folder}5.1_sentences_exploded.csv"
-# output_path = f"{folder}6.1_sentences_filtersadded.csv"
 
+def main(file_path='../../../data_files/test_pipeline/', file_name='intermediate_df'):
+    """Filters overlapping pos-sequence from the non-claim class.
 
-def main(folder: str, suffix=''):
-    input_path = f"{folder}5.1_sentences_exploded{suffix}.csv"
-    output_path = f"{folder}6.1_sentences_filtersadde{suffix}.csv"
-    df_read = pd.read_csv(input_path)
+        1. Loops through text & label
+        2. Groups by pos_tag
+        3. Adds True is pos-seq is present in both classes
+        4. for each pos-text <-> label combination adds one column:
+            - {text}_{label}_filter 
+
+    Args:
+        file_path (str, optional): Path to store (intermediate) results. 
+                                    Defaults to '../../../data_files/test_pipeline/'.
+        file_name (str, optional): Name for intermediate csv. Defaults to 'intermediate_df'.
+
+    """
+    df_read = pd.read_csv(f'{file_path}5.1_{file_name}.csv')
     df = df_read.copy()
     pos_list=['pos_nonresolved_text', 'pos_resolved_text']
 
@@ -31,6 +34,7 @@ def main(folder: str, suffix=''):
         df[name] = df[name].str.replace('  ', '')
 
     for pos_text in pos_list:
+
         for label in label_list:
             def pos_union_func(x):
                 # count the number of unique labels for this pos_seq
@@ -51,4 +55,4 @@ def main(folder: str, suffix=''):
 
 
 
-    df.to_csv(output_path, index=False)
+    df.to_csv(f'{file_path}6.1_{file_name}.csv', index=False)

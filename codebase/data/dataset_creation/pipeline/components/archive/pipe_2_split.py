@@ -1,50 +1,40 @@
-"""Reads a csv that contains a list of all articles with their fulltext.
-1. Cleans the texts.
-    -replaces abbreviations
-    -cleans special characters (except @@ == ++)
-
-2. Splits into sentences
-    -after ". "
-    -removes all remaining full stops
-    - in df stored as list of lists
-
-3. Uses the  marks to determine truth status by dataset type. 
-    @@ Quotation labeled
-    == linklabeled
-    ++ linknamelabeled
-    
-    adds following 
- 
-4. Joins split sentences for clean text version per article.
-5. Merges everything into df and stores as .csv where articles = rows
+"""
 """
 import pandas as pd
 
 from utilities.utils import *
 
 
-# folder = '../../../data_files/pipeline_steps/excellent_articles/'
-# input_path = f"{folder}1_all_articles_fetched.csv"
-# output_path = f"{folder}2_articles_labeled_cleaned.csv"
+def main(file_path='../../../data_files/test_pipeline/', file_name='intermediate_df'):
+    """Reads a csv that contains a list of all articles with their fulltext.
 
+        1. Cleans the texts.
+            -replaces abbreviations
+            -cleans special characters (except @@ == ++)
 
-def main(folder:str,suffix=''):
-    input_path = f"{folder}1_all_articles_fetched{suffix}.csv"
-    output_path = f"{folder}2_articles_labeled_cleaned{suffix}.csv"
-    df = pd.read_csv(input_path)
+        2. Splits into sentences
+            -after ". "
+            -removes all remaining full stops
+            - in df stored as list of lists
 
-    drop_indices = []
-    text_list = df['sub_texts']
-    for i, text in enumerate(text_list):
-        if len(str(text)) < 400 or 'Liste' in df['title'].iloc[i]:
-            drop_indices.append(i)
+        3. Uses the  marks to determine truth status by dataset type. 
+            @@ Quotation labeled
+            == linklabeled
+            ++ linknamelabeled
+            
+            adds following 
+        
+        4. Joins split sentences for clean text version per article.
+        5. Merges everything into df and stores as .csv where articles = rows
 
-    print(f"Dropping {len(drop_indices)} indices due to insufficient length or 'Liste' :")
-    print(drop_indices)
-    df = df.drop(drop_indices)
-    df = df.reset_index(drop=True)
-    drop_indices =[]
-    text_list = df.sub_texts
+    Args:
+        file_path (str, optional): Path to store (intermediate) results. 
+                                    Defaults to '../../../data_files/test_pipeline/'.
+        file_name (str, optional): Name for intermediate csv. Defaults to 'intermediate_df'.
+    """
+    all_article_list = pd.read_csv(f'{file_path}1_{file_name}.csv')
+
+    text_list = all_article_list.sub_texts
     cleaned_text_list = []
 
     articles_sen_list = []
@@ -53,7 +43,7 @@ def main(folder:str,suffix=''):
     articles_link_truth_list = []
     articles_linkname_truth_list = []
 
-    for article_index,text in enumerate(text_list):
+    for text in text_list:
         curr_sen_list = []
 
         curr_quot_truth = []
@@ -65,8 +55,7 @@ def main(folder:str,suffix=''):
 
         curr_split_list = no_spec_text.split('. ')
         curr_split_list = [s.replace('.','') for s in curr_split_list]
-        curr_split_list = [s for s in curr_split_list if s.strip()]
-        curr_sen_list = curr_split_list
+        curr_sen_list = [s for s in curr_split_list if s.strip()]
         for i, text in enumerate(curr_sen_list):
             if ('@@' in curr_sen_list[i]):
                 curr_sen_list[i] = curr_sen_list[i].replace('@@', '')
@@ -99,46 +88,23 @@ def main(folder:str,suffix=''):
             curr_sen_list[i] = curr_sen_list[i].replace('==', '')
             curr_sen_list[i] = curr_sen_list[i].replace('==', '')
             curr_sen_list[i] = curr_sen_list[i].replace('++', '')
-            if curr_sen_list[i] == '':
-                print("Dropped empty sentence :")
-                print(i)
-                print(df['title'].iloc[article_index])
-                del curr_sen_list[i]
-                del curr_quot_truth[i]
-                del curr_link_truth[i]
-                del curr_linkname_truth[i]
-
-
-                continue
         curr_clean_joined_text = ". ".join(curr_sen_list)
-
         cleaned_text_list.append(curr_clean_joined_text)
+
         articles_sen_list.append(curr_sen_list)
-        if(len(curr_sen_list) != len(curr_quot_truth)):
-            print("Labels dont match here:")
-            print(df['title'].iloc[article_index])
-            drop_indices.append(article_index)
+
         articles_quot_truth_list.append(curr_quot_truth)
         articles_link_truth_list.append(curr_link_truth)
         articles_linkname_truth_list.append(curr_linkname_truth)
-
         if len(articles_quot_truth_list) % 100 == 0:
             print(len(articles_quot_truth_list))
 
+    all_article_list['cleaned_article_text'] = cleaned_text_list
 
+    all_article_list['sentence_list'] = articles_sen_list
 
-    df['cleaned_article_text'] = cleaned_text_list
+    all_article_list['quot_truth_list'] = articles_quot_truth_list
+    all_article_list['link_truth_list'] = articles_link_truth_list
+    all_article_list['linkname_truth_list'] = articles_linkname_truth_list
 
-    df['sentence_list'] = articles_sen_list
-
-    df['quot_truth_list'] = articles_quot_truth_list
-    df['link_truth_list'] = articles_link_truth_list
-    df['linkname_truth_list'] = articles_linkname_truth_list
-
-    print(f"Dropping {len(drop_indices)} indices due to non-matching Label & Sentence lengt :")
-    print(drop_indices)
-
-    df = df.drop(drop_indices)
-    df = df.reset_index(drop=True)
-
-    df.to_csv(output_path, index=False)
+    all_article_list.to_csv(f'{file_path}2_{file_name}.csv',index=False)

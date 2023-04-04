@@ -8,44 +8,60 @@
     Stores as csv, where each row represents an article.
 """
 
-import pandas as pd
+import concurrent.futures
 import csv
+from random import randint
+from time import sleep
+
+import pandas as pd
+
 from utilities.utils import *
 
-def main(article_name_path:str,file_path='../../../data_files/test_pipeline/',file_name='intermediate_df'):
-    """Fetches all articles from a list of articles names (Wiki). Uses HTML-parser to identify and 
-    mark sentences:
 
-            1. With @@ that have a citation or citation immediately following
-            2. With == if they contain a (blue-font) link
-            3. With ++ if they contain a word that has been used as link in that article before or is name 
-                of a linked article
+def fetch_wiki_text(name):
+    successfull = False
+    while not successfull:
+        try:
+            text = fetch_wiki_fulltext_linklabeled(name)
+            successfull = True
+            return text
+        except Exception as e:
+            print(e)
+            sleep(randint(1, 10))
 
-    Stores as csv, where each row represents an article.
 
-    Args:
-        article_name_path (str): Path to the list of article names.
-        file_path (str, optional): Path to store (intermediate) results. 
-                                    Defaults to '../../../data_files/test_pipeline/'.
-        file_name (str, optional): Name for intermediate csv. Defaults to 'intermediate_df'.
-    """
-    article_name_list = pd.read_csv(article_name_path)
-    try:
-        fulltext_list = []
-        titles = article_name_list.title
-        for name in titles:
-            successfull = False
-            while not successfull:
-                try:
-                    text = fetch_wiki_fulltext_linklabeled(name)
-                    fulltext_list.append(text)
-                    successfull = True
-                except Exception as e:
-                    print(e)
-            print(len(fulltext_list))
-        article_name_list['sub_texts'] = fulltext_list
-        fetched_articles_df = article_name_list[['title', 'bytes', 'sub_texts']]
-        fetched_articles_df.to_csv(f'{file_path}1_{file_name}.csv', index=False)
-    except KeyboardInterrupt:
-        store_df = pd.DataFrame()
-        store_df['sub_texts'].to_csv(f'sub_texts_list_{len(store_df)}.csv')
+# titles_path = ('../../../data_files/pipeline_steps/excellent_articles/0_article_namelist_excellent.csv')
+
+# backup_path = ('../../../data_files/pipeline_steps/excellent_articles')
+
+def main(titles_path:str,folder:str,suffix='',nrows=None):
+    output_path = (
+        f"{folder}1_all_articles_fetched{suffix}.csv")
+    
+    article_name_list = pd.read_csv(titles_path,nrows=nrows)
+
+
+    titles = article_name_list.title
+    fulltext_list = []
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=32) as executor:
+        future_to_title = {executor.submit(fetch_wiki_text, title): title for title in titles}
+
+        for i, future in enumerate(concurrent.futures.as_completed(future_to_title)):
+            title = future_to_title[future]
+            try:
+                text = future.result()
+                article_name_list.loc[article_name_list.title == title, 'sub_texts'] = text
+            except Exception as e:
+                print(f"Error fetching text for {title}: {e}")
+
+            if i % 50 == 0:
+                print(i)
+            #     df_save = pd.DataFrame()
+            #     df_save[''] pd.Series(fulltext_list)
+            #     fetched_articles_df = article_name_list[['title', 'bytes', 'sub_texts']]
+            #     df_save.to_csv(f"{backup_path}/backUp_{str(i)}.csv", index=False)
+
+
+
+    article_name_list.to_csv(output_path, index=False)

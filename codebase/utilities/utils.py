@@ -138,6 +138,8 @@ def create_abbreviation_dict() -> dict:
         'cf.': 'confer',
         'Co.': 'Company',
         'co.': 'company',
+        'Chr.': 'Christus',
+        'chr.' : 'christus',
         'Dtschl.': 'Deutschland',
         'dtsch.': 'dtsch.',
         'europ.': 'europäisch',
@@ -338,6 +340,7 @@ def clean_special_characters(text: str) -> str:
 
     1. removing all points next to numbers,  
     2. Making ! to . full stop
+    3. Removes fullstop from every "Space Singleletter Fullstop" sequence
     3. Making ? to ?.
     4. Strip()ing leading/trailing whitespaces
     5. Deleting \r
@@ -351,6 +354,7 @@ def clean_special_characters(text: str) -> str:
     """
     new_text = re.sub("[0-9]\.", "", text)
     new_text = re.sub('\!', '\.', new_text)
+    new_text = re.sub(' (\w)\.',' \1', new_text)
     new_text = re.sub('\?', '\?.', new_text)
     new_text = new_text.strip()
     new_text = new_text.replace('\r', '')

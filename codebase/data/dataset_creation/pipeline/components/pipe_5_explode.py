@@ -1,25 +1,29 @@
-
+"""Explodes dataframe to a sentence=row basis
+    1. Remove full articles that:
+        - Have less than 400 characters
+        - Have 'Liste' in title
+    2. Separate article-info from sentence-based
+    3. Explode only sentence-based (+article ID)
+        - rename columns
+    4. Store 2 DFs, one article & one sentence rows
+"""
 import ast
 
 import pandas as pd
 
 from utilities.utils import *
 
+folder = '../../../data_files/pipeline_steps/excellent_articles/'
+input_path = f"{folder}4_pos_resolved_truth_cleaned.csv"
+output_path_sentences = f"{folder}5.1_sentences_exploded.csv"
+output_path_articles = f"{folder}5.2_article_info.csv"
 
-def main(file_path='../../../data_files/test_pipeline/', file_name='intermediate_df'):
-    """Explodes dataframe to a sentence=row basis
 
-        1. Separate article-info from sentence-based
-        2. Explode only sentence-based (+article ID)
-            - rename columns
-        3. Store 2 DFs, one article & one sentence rows
-
-    Args:
-        file_path (str, optional): Path to store (intermediate) results. 
-                                    Defaults to '../../../data_files/test_pipeline/'.
-        file_name (str, optional): Name for intermediate csv. Defaults to 'intermediate_df'.
-    """
-    df = pd.read_csv(f'{file_path}4_{file_name}.csv')
+def main(folder: str, suffix=''):
+    input_path = f"{folder}4_pos_resolved_truth_cleaned{suffix}.csv"
+    output_path_sentences = f"{folder}5.1_sentences_exploded{suffix}.csv"
+    output_path_articles = f"{folder}5.2_article_info{suffix}.csv"
+    df = pd.read_csv(input_path)
 
     rename = {
         'resolved_sentence_list': 'nopos_resolved_text',
@@ -39,14 +43,23 @@ def main(file_path='../../../data_files/test_pipeline/', file_name='intermediate
     for col in list_cols:
         df[col] = df[col].apply(ast.literal_eval)
 
+    drop_indices = []
+    text_list = df['cleaned_article_text']
+    for i, text in enumerate(text_list):
+        if len(str(text)) < 400 or 'Liste' in df['title'].iloc[i]:
+            drop_indices.append(i)
+    df = df.drop(drop_indices)
+    df = df.reset_index(drop=True)
+
+    print('Dropping ' + str(len(drop_indices)) + " articles:")
+    print(drop_indices)
+
     df['article_index'] = df.index
     df_articles = df.copy()
     df_articles = df_articles[[
         'article_index',
         'title',
         'bytes',
-        'no_sen',
-        'res_no_sen',
         'resolved_text_list',
         'cleaned_article_text',
         'sub_texts',
@@ -65,15 +78,22 @@ def main(file_path='../../../data_files/test_pipeline/', file_name='intermediate
     ]]
     df_sentences = df_sentences.explode(list_cols)
     df_sentences = df_sentences.rename(columns=rename)
+    df_sentences = df_sentences.reset_index(drop=True)
 
-    # df_sentences['pos_sentence_strings'] = df_sentences['pos_sentence_list']
-    # df_sentences['pos_resolved_sentence_strings'] = df_sentences['pos_resolved_sentence_list']
+    pos_sentences = df_sentences['pos_nonresolved_text']
+    sentence_drop_indices = []
+    for i, pos in enumerate(pos_sentences):
+        if 'VERB' not in str(pos) or 'nan' in str(pos) or len(str(pos).split()) <4:
+            sentence_drop_indices.append(i)
 
-    # pos_sentences_list = df_sentences['pos_sentence_list'].str.split().tolist()
-    # pos_resolved_sentences_list = df_sentences['pos_resolved_sentence_list'].str.split().tolist()
+    print('Dropping ' + str(len(sentence_drop_indices)) + " sentences:")
+    # print(sentence_drop_indices)
 
-    # df_sentences['pos_sentence_list'] = pos_sentences_list
-    # df_sentences['pos_resolved_sentence_list'] = pos_resolved_sentences_list
+    df_sentences = df_sentences.drop(sentence_drop_indices)
+    df_sentences = df_sentences.reset_index(drop=True)
+    print(len(df_sentences))
     print(df_sentences.columns)
-    df_sentences.to_csv(f'{file_path}5.1_{file_name}.csv',index=False)
-    df_articles.to_csv(f'{file_path}5.2_{file_name}.csv',index=False)
+
+
+    df_sentences.to_csv(output_path_sentences)
+    df_articles.to_csv(output_path_articles)

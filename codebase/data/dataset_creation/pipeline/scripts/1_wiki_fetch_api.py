@@ -8,27 +8,54 @@
     Stores as csv, where each row represents an article.
 """
 
-import pandas as pd
+import concurrent.futures
 import csv
+from random import randint
+from time import sleep
+
+import pandas as pd
+
 from utilities.utils import *
 
-article_name_list = pd.read_csv('../../../data_files/pipeline_steps/all_protected_wiki_list.csv')
-try:
-    fulltext_list = []
-    titles = article_name_list.title
-    for name in titles:
-        successfull = False
-        while not successfull:
-            try:
-                text = fetch_wiki_fulltext_linklabeled(name)
-                fulltext_list.append(text)
-                successfull = True
-            except Exception as e:
-                print(e)
-        print(len(fulltext_list))
-    article_name_list['sub_texts'] = fulltext_list
-    fetched_articles_df = article_name_list[['title', 'bytes', 'sub_texts']]
-    fetched_articles_df.to_csv('../../../data_files/1_all_articles_fetched.csv',index=False)
-except KeyboardInterrupt:
-    store_df = pd.DataFrame()
-    store_df['sub_texts'].to_csv(f'sub_texts_list_{len(store_df)}.csv')
+
+def fetch_wiki_text(name):
+    successfull = False
+    while not successfull:
+        try:
+            text = fetch_wiki_fulltext_linklabeled(name)
+            successfull = True
+            return text
+        except Exception as e:
+            print(e)
+            sleep(randint(1, 10))
+
+
+titles_path = ('../../../data_files/pipeline_steps/excellent_articles/0_article_namelist_excellent.csv')
+output_path = (
+    '../../../data_files/pipeline_steps/excellent_articles/1_all_articles_fetched.csv')
+backup_path = ('../../../data_files/pipeline_steps/excellent_articles')
+article_name_list = pd.read_csv(titles_path)
+titles = article_name_list.title
+fulltext_list = []
+
+with concurrent.futures.ThreadPoolExecutor(max_workers=32) as executor:
+    future_to_title = {executor.submit(fetch_wiki_text, title): title for title in titles}
+
+    for i, future in enumerate(concurrent.futures.as_completed(future_to_title)):
+        title = future_to_title[future]
+        try:
+            text = future.result()
+            article_name_list.loc[article_name_list.title == title, 'sub_texts'] = text
+        except Exception as e:
+            print(f"Error fetching text for {title}: {e}")
+
+        if i % 50 == 0:
+            print(i)
+        #     df_save = pd.DataFrame()
+        #     df_save[''] pd.Series(fulltext_list)
+        #     fetched_articles_df = article_name_list[['title', 'bytes', 'sub_texts']]
+        #     df_save.to_csv(f"{backup_path}/backUp_{str(i)}.csv", index=False)
+
+
+
+article_name_list.to_csv(output_path, index=False)

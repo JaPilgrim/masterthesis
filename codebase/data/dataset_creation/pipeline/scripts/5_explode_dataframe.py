@@ -1,8 +1,11 @@
 """Explodes dataframe to a sentence=row basis
-    1. Separate article-info from sentence-based
-    2. Explode only sentence-based (+article ID)
+    1. Remove full articles that:
+        - Have less than 400 characters
+        - Have 'Liste' in title
+    2. Separate article-info from sentence-based
+    3. Explode only sentence-based (+article ID)
         - rename columns
-    3. Store 2 DFs, one article & one sentence rows
+    4. Store 2 DFs, one article & one sentence rows
 """
 import ast
 
@@ -10,7 +13,13 @@ import pandas as pd
 
 from utilities.utils import *
 
-df = pd.read_csv('../../../data_files/pipeline_steps/4_pos_resolved_truth_cleaned.csv')
+folder = '../../../data_files/pipeline_steps/excellent_articles/'
+input_path = f"{folder}4_pos_resolved_truth_cleaned.csv"
+output_path_sentences = f"{folder}5.1_sentences_exploded.csv"
+output_path_articles = f"{folder}5.2_article_info.csv"
+
+
+df = pd.read_csv(input_path)
 
 rename = {
     'resolved_sentence_list': 'nopos_resolved_text',
@@ -30,14 +39,23 @@ list_cols = [
 for col in list_cols:
     df[col] = df[col].apply(ast.literal_eval)
 
+drop_indices = []
+text_list = df['cleaned_article_text']
+for i, text in enumerate(text_list):
+    if len(str(text)) < 400 or 'Liste' in df['title'].iloc[i]:
+        drop_indices.append(i)
+df = df.drop(drop_indices)
+df = df.reset_index(drop=True)
+
+print('Dropping ' + str(len(drop_indices)) + " articles:")
+print(drop_indices)
+
 df['article_index'] = df.index
 df_articles = df.copy()
 df_articles = df_articles[[
     'article_index',
     'title',
     'bytes',
-    'no_sen',
-    'res_no_sen',
     'resolved_text_list',
     'cleaned_article_text',
     'sub_texts',
@@ -56,15 +74,22 @@ df_sentences = df_sentences[[
 ]]
 df_sentences = df_sentences.explode(list_cols)
 df_sentences = df_sentences.rename(columns=rename)
+df_sentences = df_sentences.reset_index(drop=True)
 
-# df_sentences['pos_sentence_strings'] = df_sentences['pos_sentence_list']
-# df_sentences['pos_resolved_sentence_strings'] = df_sentences['pos_resolved_sentence_list']
+pos_sentences = df_sentences['pos_nonresolved_text']
+sentence_drop_indices = []
+for i, pos in enumerate(pos_sentences):
+    if 'VERB' not in str(pos) or 'nan' in str(pos) or len(str(pos).split()) <4:
+        sentence_drop_indices.append(i)
 
-# pos_sentences_list = df_sentences['pos_sentence_list'].str.split().tolist()
-# pos_resolved_sentences_list = df_sentences['pos_resolved_sentence_list'].str.split().tolist()
+print('Dropping ' + str(len(sentence_drop_indices)) + " sentences:")
+# print(sentence_drop_indices)
 
-# df_sentences['pos_sentence_list'] = pos_sentences_list
-# df_sentences['pos_resolved_sentence_list'] = pos_resolved_sentences_list
+df_sentences = df_sentences.drop(sentence_drop_indices)
+df_sentences = df_sentences.reset_index(drop=True)
+print(len(df_sentences))
 print(df_sentences.columns)
-df_sentences.to_csv('../../../data_files/pipeline_steps/5.1_sentences_exploded.csv')
-df_articles.to_csv('../../../data_files/pipeline_steps/5.2_article_info.csv')
+
+
+df_sentences.to_csv(output_path_sentences)
+df_articles.to_csv(output_path_articles)

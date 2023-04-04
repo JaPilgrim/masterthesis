@@ -22,15 +22,22 @@ import de_core_news_sm
 import ast
 from itertools import zip_longest
 import Levenshtein
-#TODO Function that drops all rows 
-nlp = spacy.load('de_core_news_sm')
+import time
+#TODO Function that drops all rows
+start_time = time.time()
+nlp = spacy.load('de_core_news_sm',disable=['ner','parser'])
 nlp.add_pipe('coreferee')
 
-df = pd.read_csv('../../../data_files/pipeline_steps/2_articles_labeled_cleaned.csv')
+
+folder = '../../../data_files/pipeline_steps/excellent_articles/'
+input_path = f"{folder}2_articles_labeled_cleaned.csv"
+output_path = f"{folder}3_articles_resolved_labeled_cleaned)_300.csv"
+
+df = pd.read_csv(input_path,nrows=300)
 df['sentence_list'] = df['sentence_list'].apply(
     ast.literal_eval)
 
-text_list = df.cleaned_article_text
+text_list = df.cleaned_article_text.astype(str)
 resolved_text_list = []
 
 articles_pos_list = []
@@ -42,8 +49,10 @@ articles_resolved_sentence_list = []
 
 indices_to_drop=[]
 
-for i,text in enumerate(text_list):
-    doc = nlp(str(text))
+docs = list(nlp.pipe((text_list)))
+
+for i,doc in enumerate(docs):
+    # doc = nlp(str(text))
     sorted_tokens = sorted(doc, key=lambda token: token.i)
     for chain in doc._.coref_chains:
         for mention in chain:
@@ -63,35 +72,40 @@ for i,text in enumerate(text_list):
     resolved_sentence_list = [s for s in resolved_sentence_list if s.strip()]
 
     sentence_list = articles_sentence_list[i]
-    striped_sentence_list = [s for s in sentence_list if s.strip()]
+    # striped_sentence_list = [s for s in sentence_list if s.strip()]
 
     resolved_text_list.append(resolved_text)
+    # sentence_list = [item for item in sentence_list if item != ""]
+    resolved_sentence_list = [item for item in resolved_sentence_list if item != ""]
+
     articles_resolved_sentence_list.append(resolved_sentence_list)
-    articles_stripped_sentence_list.append(striped_sentence_list)
+    # articles_stripped_sentence_list.append(striped_sentence_list)
 
     if len(resolved_sentence_list) != len(sentence_list):
         print('index: ' + str(i) + ' resolved_length: ' + str(len(resolved_sentence_list)))
         print('striped (original) length: ' + str(len(sentence_list)))
         print(df['title'].iloc[i])
+        print(resolved_sentence_list[-2:])
+        print(sentence_list[-2:])
         indices_to_drop.append(i)
-        store_text1=''
-        store_text2=''
-        for item1, item2 in zip_longest(resolved_sentence_list,striped_sentence_list):
-            if (Levenshtein.ratio(item1,item2)<0.95):
-                i+=1
-                if (Levenshtein.ratio(item1, item2) < 0.5):
-                    print(store_text1)
-                    print(store_text2)
-                    print(" << To Here >>")
-                    print("Resolved: " + str(item1))
-                    print("Original: " + str(item2))
-                    print("<< Here >> ")
-                    print( " ")
-                    break
-            store_text1 = ("Resolved: " + item1)
-            store_text2 = ("Original: " + item2)
+        # store_text1=''
+        # store_text2=''
+        # for item1, item2 in zip_longest(resolved_sentence_list, resolved_sentence_list):
+        #     if (Levenshtein.ratio(item1,item2)<0.95):
+        #         i+=1
+        #         if (Levenshtein.ratio(item1, item2) < 0.5):
+        #             print(store_text1)
+        #             print(store_text2)
+        #             print(" << To Here >>")
+        #             print("Resolved: " + str(item1))
+        #             print("Original: " + str(item2))
+        #             print("<< Here >> ")
+        #             print( " ")
+        #             break
+        #     store_text1 = ("Resolved: " + item1)
+        #     store_text2 = ("Original: " + item2)
 
-    if len(resolved_text_list) % 100 ==0:
+    if len(resolved_text_list) % 50 ==0:
         print(len(resolved_text_list))
 
 df['resolved_text_list'] = resolved_text_list
@@ -105,4 +119,8 @@ df_to_store = df[[
     'title', 'bytes', 'resolved_text_list', 'cleaned_article_text', 'sub_texts', 'resolved_sentence_list','sentence_list',
     'quot_truth_list', 'link_truth_list', 'linkname_truth_list'
 ]]
-df_to_store.to_csv('../../../data_files/pipeline_steps/3_articles_resolved_labeled_cleaned.csv',index=False)
+df_to_store.to_csv(output_path,index=False)
+end_time = time.time()
+
+took_time = end_time - start_time
+print(f' took {took_time} time')

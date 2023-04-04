@@ -10,7 +10,12 @@
 import pandas as pd
 from utilities.utils import *
 
-df_read = pd.read_csv('../../../data_files/pipeline_steps/5.1_sentences_exploded.csv')
+folder = '../../../data_files/pipeline_steps/excellent_articles/'
+input_path = f"{folder}5.1_sentences_exploded.csv"
+output_path = f"{folder}6.1_sentences_filtersadded.csv"
+
+
+df_read = pd.read_csv(input_path)
 df = df_read.copy()
 pos_list=['pos_nonresolved_text', 'pos_resolved_text']
 
@@ -23,7 +28,6 @@ for name in columns:
     df[name] = df[name].str.replace('  ', '')
 
 for pos_text in pos_list:
-
     for label in label_list:
         def pos_union_func(x):
             # count the number of unique labels for this pos_seq
@@ -44,4 +48,4 @@ for pos_text in pos_list:
 
 
 
-df.to_csv('../../../data_files/pipeline_steps/6.1_sentences_filtersadded5.csv', index=False)
+df.to_csv(output_path, index=False)
