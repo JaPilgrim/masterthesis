@@ -37,7 +37,7 @@ nlp.add_pipe('coreferee')
 def main(folder: str, suffix=''):
     input_path = f"{folder}2_articles_labeled_cleaned{suffix}.csv"
     output_path = f"{folder}3_articles_resolved_labeled_cleaned{suffix}.csv"
-    df = pd.read_csv(input_path,nrows=300)
+    df = pd.read_csv(input_path)
     df['sentence_list'] = df['sentence_list'].apply(
         ast.literal_eval)
 
