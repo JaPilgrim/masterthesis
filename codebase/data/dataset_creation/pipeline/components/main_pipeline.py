@@ -1,4 +1,5 @@
 import sys
+sys.path.append('/root/projects/jpthesis/keygens/masterthesis/codebase/')
 import pipe_1_fetch
 import pipe_2_split
 import pipe_3_resolve
@@ -6,10 +7,10 @@ import pipe_4_postag
 import pipe_5_explode
 import pipe_6_posfilter
 
-article_list = '../../../data_files/pipeline_steps/readworthy_articles/0_readworthy_titles.csv'
-folder = '../../../data_files/pipeline_steps/readworthy_articles/'
-suffix = '200'
-nrows = 200
+article_list = '../../../data_files/pipeline_steps/protected_articles/0_protected_titles.csv'
+folder = '../../../data_files/pipeline_steps/protected_articles/'
+suffix = ''
+nrows = None
 
 pipe_1_fetch.main(article_list, folder, suffix, nrows)
 print("Pipeline Step 1 finished!! ")

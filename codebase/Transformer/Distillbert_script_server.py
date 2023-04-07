@@ -19,9 +19,12 @@ os.environ['TOKENIZERS_PARALLELISM'] = '1'
 import tensorflow as tf
 import wandb
 from transformers import TFAutoModelForSequenceClassification, create_optimizer
-from transformers.keras_callbacks import KerasMetricCallback, PushToHubCallback
+from transformers.keras_callbacks import KerasMetricCallback
 from wandb.keras import WandbMetricsLogger, WandbModelCheckpoint
+from tensorflow.keras import  mixed_precision
 
+policy = mixed_precision.Policy('mixed_float16')
+mixed_precision.set_global_policy(policy)
 
 # wandb.init(
 #     project='pretrain-transform-wiki',
@@ -38,6 +41,23 @@ from wandb.keras import WandbMetricsLogger, WandbModelCheckpoint
 #     }
 # )
 # config=wandb.config
+def evaluate_transformer(df:pd.DataFrame(), model) -> tuple[float,float,float,float]:
+    sentence_list = list(df['text'])
+    ground_truth = list(df['label'])
+
+    tokenized = trans_tokenizer(sentence_list, return_tensors='np', padding='longest')
+    outputs = model(tokenized).logits
+
+    predictions = np.argmax(outputs, axis=1)
+    predictions_list = list(predictions)
+
+    accuracy = accuracy_score(ground_truth, predictions_list)
+    precision = precision_score(ground_truth, predictions_list)
+    recall = recall_score(ground_truth, predictions_list)
+    f1_value = f1_score(ground_truth, predictions_list)
+
+    return accuracy, precision, recall, f1_value
+
 
 
 def preprocess_transformer_token(example):
@@ -54,9 +74,9 @@ def compute_metrics(eval_pred):
     predictions = np.argmax(predictions, axis=1)
     return accuracy.compute(predictions=predictions, references=labels)
 
-
+filename = 'excellent_nopos_resolved_namelink_nofilter.csv'
 df = pd.read_csv(
-    '../data/data_files/test_samples/5th_try/excellent_pos_resolved_namelink_nofilter.csv',
+    f'../data/data_files/test_samples/6th_smalltransformer/{filename}',
     nrows=2500)
 test_share = 0.2
 eff_val_share = 0.2 / (1 - test_share)
@@ -79,6 +99,11 @@ model = TFAutoModelForSequenceClassification.from_pretrained("distilbert-base-ge
                                                              num_labels=2,
                                                              from_pt=True)
 
+transfer_set = pd.read_csv('../data/data_files/annotated_pos_test.csv')
+
+if filename[:3] + 'pos':
+        transfer_set['text'] = transfer_set['pos_string']
+
 tf_train_set = model.prepare_tf_dataset(
     val_split['train'],
     shuffle=True,
@@ -96,10 +121,10 @@ tf_validation_set = model.prepare_tf_dataset(
 model.compile(optimizer=optimizer, )
 
 metric_callback = KerasMetricCallback(metric_fn=compute_metrics, eval_dataset=tf_validation_set)
-push_to_hub_callback = PushToHubCallback(
-    output_dir="new_version123",
-    tokenizer=trans_tokenizer,
-)
+# push_to_hub_callback = PushToHubCallback(
+#     output_dir="new_version123",
+#     tokenizer=trans_tokenizer,
+# )
 
 # callbacks = [metric_callback, push_to_hub_callback,WandbMetricsLogger(log_freq=5),WandbModelCheckpoint('models')]
 callbacks = [
@@ -116,9 +141,8 @@ callbacks = [
 # feature_shape = feature_train.shape
 # label_shape = label_train.shape
 
-print(tf_train_set)
-print(tf_validation_set)
-
+test_accuracy, test_precision, test_recall, test_f1_value = evaluate_transformer(test_set,model,)
+transfer_accuracy, transfer_precision, transfer_recall, transfer_f1_value = evaluate_transformer(transfer_set,model,)
 # print(label_shape)
 # # Check shapes of input tensors
 # print("Input tensor shapes:")
@@ -141,24 +165,10 @@ print(tf_validation_set)
 model.summary()
 model.fit(x=tf_train_set, validation_data=tf_validation_set, epochs=num_epochs)
 
-sentence_list = list(test_set['text'])
-tokenized = trans_tokenizer(sentence_list, return_tensors='np', padding='longest')
-
-outputs = model(tokenized).logits
-predictions = np.argmax(outputs, axis=1)
-predictions_list = list(predictions)
-
-ground_truth = list(test_set['label'])
-
-accuracy = accuracy_score(ground_truth, predictions_list)
-precision = precision_score(ground_truth, predictions_list)
-recall = recall_score(ground_truth, predictions_list)
-f1_value = f1_score(ground_truth, predictions_list)
-
-print(accuracy)
-print(precision)
-print(recall)
-print(f1_value)
+print(test_accuracy)
+print(test_precision)
+print(test_recall)
+print(test_f1_value)
 
 # softmaxed = tf.nn.softmax(outputs)
 # softmaxed = softmaxed.numpy()

@@ -101,7 +101,7 @@ class LSTMDataHandler():
 
         self.train_padded = self.raw_text_to_padded_sequences(self.train_df[self.text_column])
         self.val_padded = self.raw_text_to_padded_sequences(self.val_df[self.text_column])
-
+        
         return self.train_df, self.val_df, self.whole_df
 
     def split_test_whole(self, test_size=None, random_state=2) -> tuple[pd.DataFrame, pd.DataFrame]:
