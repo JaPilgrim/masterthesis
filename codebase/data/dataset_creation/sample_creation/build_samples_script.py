@@ -5,13 +5,21 @@ import pandas as pd
 from utilities.utils import *
 import ast
 import re
-sample = 1000
+
+
+folder ='../../data_files/test_samples/7th_RNN25k/'
+sample = 25000
+
+
+
 labels = ['quot_label', 'link_label', 'namelink_label']
 texts = [
     'nopos_resolved_text', 'nopos_nonresolved_text', 'pos_nonresolved_text', 'pos_resolved_text','masked_resolved_text','masked_nonresolved_text'
 ]
 if_filter = ['filter', 'nofilter']
 article_categories = ['protected', 'excellent', 'readworthy']
+
+
 
 for category in article_categories:
     df = pd.DataFrame()
@@ -26,7 +34,6 @@ for category in article_categories:
 
         for text in texts:
             for to_filter in if_filter:
-
                 name = f"{text[:-5]}_{label[:-6]}_{to_filter}"
                 if to_filter == 'filter' and not text[:3] == 'pos':
                     pattern = r'_([^_]*)_'
@@ -55,5 +62,5 @@ for category in article_categories:
                 df_random = df_random.sample(frac=1)
                 # df_equal = df_equal.sample(frac=1)
 
-                df_random.to_csv(f'../../data_files/test_samples/6th_smalltransformer/{category}_{name}.csv')
+                df_random.to_csv(f'{folder}{category}_{name}.csv')
                 # df_equal.to_csv(f'../../data_files/test_samples/4th_test_dataset_samples/{name}_equal.csv')

@@ -8,6 +8,7 @@ from utilities.utils import *
 
 
 class LSTMDataHandler():
+
     def __init__(self,
                  val_share=0.2,
                  text_column="text",
@@ -101,7 +102,7 @@ class LSTMDataHandler():
 
         self.train_padded = self.raw_text_to_padded_sequences(self.train_df[self.text_column])
         self.val_padded = self.raw_text_to_padded_sequences(self.val_df[self.text_column])
-        
+
         return self.train_df, self.val_df, self.whole_df
 
     def split_test_whole(self, test_size=None, random_state=2) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -210,9 +211,10 @@ class LSTMDataHandler():
             float: accuracy
             float: AUC
         """
-        test_accuracy, test_AUC,test_f1 = self._predict_and_compute_test(self.test_df, model)
-        transfer_accuracy, transfer_AUC,transfer_f1 = self._predict_and_compute_test(self.transfer_df, model)
-        return test_accuracy, test_AUC, test_f1, transfer_accuracy, transfer_AUC,transfer_f1
+        test_accuracy, test_precision, test_recall, test_f1_value = self._predict_and_compute_test(self.test_df, model)
+        transfer_accuracy, transfer_precision, transfer_recall, transfer_f1_value = self._predict_and_compute_test(
+            self.transfer_df, model)
+        return test_accuracy, test_precision, test_recall, test_f1_value, transfer_accuracy, transfer_precision, transfer_recall, transfer_f1_value
 
     def _predict_and_compute_test(self, df, model: keras.Model):
 
@@ -223,9 +225,8 @@ class LSTMDataHandler():
 
         df['probabilities'] = np.array(model.predict(padded_list))
 
-        accuracy, AUC, f1_score = compute_accuracy_AUC_f1(df[self.label_column],
-                                                          df['probabilities'])
-        return accuracy, AUC, f1_score
+        accuracy, precision, recall, f1_value = get_acc_prec_rec_f1(df[self.label_column], df['probabilities'])
+        return accuracy, precision, recall, f1_value
 
     # def predict_label(self, text_list: list[str]) -> list[bool]:
     #     """Predits the label column. Stores test data & predictino to self.

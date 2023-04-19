@@ -14,7 +14,13 @@ from bs4 import BeautifulSoup
 from sklearn import metrics
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import f1_score 
+from sklearn.metrics import precision_score
+from sklearn.metrics import recall_score
+
+
 from sklearn.model_selection import train_test_split
+
+
 
 nltk.download('stopwords')
 from collections import Counter
@@ -76,7 +82,7 @@ def get_sentence_pos_list(sentence, nlp: Language) -> list[str]:
     return sentence_pos
 
 
-def compute_accuracy_AUC_f1(prediction: pd.Series, probabilities: pd.Series) -> tuple:
+def get_acc_prec_rec_f1(prediction: pd.Series, probabilities: pd.Series) -> tuple:
     """Computes and returns AUC & accuracy. 
     Args:
         ground_truth (list[bool]): Ground truth bool
@@ -89,13 +95,16 @@ def compute_accuracy_AUC_f1(prediction: pd.Series, probabilities: pd.Series) -> 
     ground_truth = np.where(probabilities >= 0.5, 1, 0)
 
     accuracy = accuracy_score(ground_truth, prediction)
-    f1_val = f1_score(ground_truth, prediction)
-    try:
-        auc = metrics.roc_auc_score(ground_truth, prediction)
-    except:
-        auc = 0
+    precision = precision_score(ground_truth, prediction)
+    recall = recall_score(ground_truth, prediction)
+    f1_value = f1_score(ground_truth, prediction)
 
-    return accuracy, auc, f1_val
+    # try:
+    #     auc = metrics.roc_auc_score(ground_truth, prediction)
+    # except:
+    #     auc = 0
+
+    return accuracy, precision, recall, f1_value
 
 
 def plot_compute_AUC(ground_truth: pd.Series, prediction: pd.Series) -> tuple:

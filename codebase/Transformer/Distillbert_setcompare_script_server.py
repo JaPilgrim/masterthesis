@@ -51,10 +51,7 @@ def evaluate_transformer(df:pd.DataFrame(), model) -> tuple[float,float,float,fl
     predictions = np.argmax(outputs, axis=1)
     predictions_list = list(predictions)
 
-    accuracy = accuracy_score(ground_truth, predictions_list)
-    precision = precision_score(ground_truth, predictions_list)
-    recall = recall_score(ground_truth, predictions_list)
-    f1_value = f1_score(ground_truth, predictions_list)
+    accuracy, precision, recall, f1_value = f1_score(ground_truth, predictions_list)
 
     return accuracy, precision, recall, f1_value
 
@@ -131,6 +128,7 @@ callbacks = [
     metric_callback,
 ]
 
+
 model.summary()
 model.fit(x=tf_train_set, validation_data=tf_validation_set, epochs=num_epochs)
 
@@ -138,11 +136,20 @@ model.fit(x=tf_train_set, validation_data=tf_validation_set, epochs=num_epochs)
 test_accuracy, test_precision, test_recall, test_f1_value = evaluate_transformer(test_set,model,)
 transfer_accuracy, transfer_precision, transfer_recall, transfer_f1_value = evaluate_transformer(transfer_set,model,)
 
+log = {
 
-print(test_accuracy)
-print(test_precision)
-print(test_recall)
-print(test_f1_value)
+        'test_acc': test_accuracy,
+        'test_prec': test_precision,
+        'test_rec' : test_recall,
+        'test_f1': test_f1_value,
+        'transfer_acc': transfer_accuracy,
+        'transfer_prec': transfer_precision,
+        'transfer_rec' : transfer_recall,
+        'transfer_f1': transfer_f1_value,
+}
+
+print(log)
+
 
 # softmaxed = tf.nn.softmax(outputs)
 # softmaxed = softmaxed.numpy()

@@ -34,20 +34,21 @@ sweep_configuration = {
         'name': 'test_acc'
     },
     'parameters': {
-        'fileindex': {'max' : 71,'min' :0},
+        'fileindex': {'max' : 107,'min' :0},
     }
 }
 
 
 
 def main():
-    folder = '../data/data_files/test_samples/5th_try/'
+    folder = '../data/data_files/test_samples/7th_RNN25k/'
     run = wandb.init()
     fileindex = wandb.config.fileindex
+    # fileindex = 5
     file_names = os.listdir(folder)
-    print(len(file_names))
+    
     filename = file_names[fileindex]
-
+    print((filename))
     lstm_dataset = LSTMDataHandler()
 
     lstm_dataset.load_datasets(f"{folder}{filename}",
@@ -71,7 +72,7 @@ def main():
     metrics = ['accuracy']
     model.compile(loss=loss, optimizer=optim, metrics=metrics)
 
-    es = EarlyStopping("val_loss", mode='min', verbose=1, patience=2)
+    es = EarlyStopping("val_loss", mode='auto', verbose=1, patience=2)
     
     class_weights = compute_class_weight(
         class_weight='balanced',
@@ -88,27 +89,30 @@ def main():
                         callbacks=[es],
                         epochs=10)
 
-    test_acc, test_AUC, test_f1, transfer_acc, transfer_AUC, transfer_f1 = lstm_dataset.evaluate_model(
+    test_accuracy, test_precision, test_recall, test_f1_value, transfer_accuracy, transfer_precision, transfer_recall, transfer_f1_value = lstm_dataset.evaluate_model(
         model)
 
     false_samples = len(lstm_dataset.train_df[lstm_dataset.train_df['label'] == False])
     true_samples = len(lstm_dataset.train_df[lstm_dataset.train_df['label'] == True])
     data_meta_info = filename.split('_')
-    wandb.log({
+    log = {
         'articles': data_meta_info[0],
         'pos': data_meta_info[1],
         'resolved': data_meta_info[2],
         'labeling': data_meta_info[3],
         'filter': data_meta_info[4],
-        'test_acc': test_acc,
-        'test_AUC': test_AUC,
-        'test_f1': test_f1,
-        'transfer_acc': transfer_acc,
-        'transfer_AUC': transfer_AUC,
-        'transfer_f1': transfer_f1,
+        'test_acc': test_accuracy,
+        'test_prec': test_precision,
+        'test_rec' : test_recall,
+        'test_f1': test_f1_value,
+        'transfer_acc': transfer_accuracy,
+        'transfer_prec': transfer_precision,
+        'transfer_rec' : transfer_recall,
+        'transfer_f1': transfer_f1_value,
         'class_false': false_samples,
-        'class_true': true_samples
-    })
+        'class_true': true_samples}
+    wandb.log(log)
+    print(log)
 
 
 main()
