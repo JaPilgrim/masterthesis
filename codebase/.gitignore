@@ -12,6 +12,8 @@ __pycache__/*
 data/data_files/fang-covid-main/*
 *.json
 *.csv
+*.ttl
+*.bz2
 
 # Ignore Logs
 logs

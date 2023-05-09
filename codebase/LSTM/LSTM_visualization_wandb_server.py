@@ -11,6 +11,11 @@ from sklearn.utils.class_weight import compute_class_weight
 from tensorflow import keras
 from tensorflow.keras import callbacks, layers
 import tensorflow as tf
+from tensorflow.keras.layers import Bidirectional
+from tensorflow.keras.callbacks import TensorBoard
+from tensorflow.keras.layers import BatchNormalization
+from tensorflow.keras.layers import GlobalMaxPooling1D, GlobalAveragePooling1D
+
 # physical_devices = tf.config.list_physical_devices('GPU')
 # tf.config.experimental.set_memory_growth(physical_devices[0], enable=True)
 # gpu_options = tf.GPUOptions(allow_growth=True)
@@ -23,6 +28,8 @@ import numpy as np
 import seaborn as sns
 from sklearn.metrics import confusion_matrix
 
+np.random.seed(2)
+tf.random.set_seed(2)
 
 # Plot learning curves
 def plot_learning_curves(history):
@@ -41,6 +48,7 @@ def plot_learning_curves(history):
     plt.xlabel('Epochs')
     plt.ylabel('Accuracy')
     plt.legend()
+    plt.savefig('learning_curves.png')
 
     plt.show()
 
@@ -58,6 +66,8 @@ def plot_confusion_matrix(y_true, y_pred, labels):
     plt.xlabel('Predicted')
     plt.ylabel('True')
     plt.title('Confusion Matrix')
+    plt.savefig('confusion_matrix.png')
+
     plt.show()
 
 
@@ -94,6 +104,7 @@ def main():
 
     filename = file_names[fileindex]
     print((filename))
+    padding_length = 64
     lstm_dataset = LSTMDataHandler()
 
     lstm_dataset.load_datasets(f"{folder}{filename}",
@@ -107,7 +118,15 @@ def main():
 
     model = keras.models.Sequential()
     model.add(layers.Embedding(lstm_dataset.tokenizer_class.num_unique_words, 32, input_length=32))
-    model.add(layers.LSTM(128))
+    # model.add(layers.LSTM(128))
+    model.add(Bidirectional(layers.LSTM(128,return_sequences=True)))
+    model.add(layers.LSTM(64))
+    # model.add(layers.LSTM(128, return_sequences=True))
+    # model.add(layers.LSTM(64, return_sequences=True))
+    # model.add(layers.LSTM(64))
+    # model.add(BatchNormalization())
+    # model.add(GlobalMaxPooling1D())
+    model.add(layers.Dense(32, activation='relu'))
     model.add(layers.Dense(1, activation='softsign'))
     model.summary()
 
@@ -126,10 +145,12 @@ def main():
     )
     class_weights_dict = dict(enumerate(class_weights))
 
+    # steps_per_epoch = 16000 // (32 * 10)
+
     history = model.fit(lstm_dataset.train_padded,
                         lstm_dataset.train_df['label'],
                         batch_size=32,
-                        class_weight=class_weights_dict,
+                        # steps_per_epoch = steps_per_epoch,
                         validation_data=(lstm_dataset.val_padded, lstm_dataset.val_df['label']),
                         callbacks=[es],
                         epochs=10)
