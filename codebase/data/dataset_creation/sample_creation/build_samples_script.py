@@ -7,7 +7,7 @@ import ast
 import re
 
 
-folder ='../../data_files/test_samples/7th_RNN25k/'
+folder ='../../data_files/test_samples/8th_25k_4sets/'
 sample = 25000
 
 
@@ -17,7 +17,7 @@ texts = [
     'nopos_resolved_text', 'nopos_nonresolved_text', 'pos_nonresolved_text', 'pos_resolved_text','masked_resolved_text','masked_nonresolved_text'
 ]
 if_filter = ['filter', 'nofilter']
-article_categories = ['protected', 'excellent', 'readworthy']
+article_categories = ['protected', 'excellent', 'readworthy','random']
 
 
 

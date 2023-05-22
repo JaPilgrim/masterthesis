@@ -39,7 +39,7 @@ class LSTMDataHandler():
 
     def split_off_testset_external(self, path, val_share=0.2, random_state=2):
         """Takes a portion of loaded_df and uses it as test_df. Updates whole_df accordingly
-
+        
         Args:
             path (str): path to test df
             val_share (float, optional): Defaults to 0.2.

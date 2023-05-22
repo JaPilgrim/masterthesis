@@ -85,10 +85,11 @@ def main(folder: str, suffix=''):
     for i, pos in enumerate(pos_sentences):
         if 'VERB' not in str(pos) or 'nan' in str(pos) or len(str(pos).split()) <4:
             sentence_drop_indices.append(i)
-
+    
     print('Dropping ' + str(len(sentence_drop_indices)) + " sentences:")
     # print(sentence_drop_indices)
 
+    print(len(df_sentences))
     df_sentences = df_sentences.drop(sentence_drop_indices)
     df_sentences = df_sentences.reset_index(drop=True)
     print(len(df_sentences))

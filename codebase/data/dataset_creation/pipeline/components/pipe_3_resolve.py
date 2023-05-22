@@ -70,7 +70,7 @@ def main(folder: str, suffix=''):
                         continue
                     sorted_tokens[index] = doc._.coref_chains.resolve(doc[index])[0]
         resolved_doc = spacy.tokens.Doc(doc.vocab, words=[token.text for token in sorted_tokens])
-
+        
         resolved_text = resolved_doc.text
         resolved_sentence_list = resolved_text.split('. ')
         resolved_sentence_list = [s for s in resolved_sentence_list if s.strip()]

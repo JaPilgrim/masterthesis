@@ -55,7 +55,7 @@ def main(folder:str,suffix=''):
 
     for article_index,text in enumerate(text_list):
         curr_sen_list = []
-
+        
         curr_quot_truth = []
         curr_link_truth = []
         curr_linkname_truth = []

@@ -88,7 +88,7 @@ def main():
                         validation_data=(lstm_dataset.val_padded, lstm_dataset.val_df['label']),
                         callbacks=[es],
                         epochs=10)
-
+    
     test_accuracy, test_precision, test_recall, test_f1_value, transfer_accuracy, transfer_precision, transfer_recall, transfer_f1_value = lstm_dataset.evaluate_model(
         model)
 

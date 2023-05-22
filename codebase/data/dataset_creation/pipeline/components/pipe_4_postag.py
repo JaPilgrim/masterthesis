@@ -90,7 +90,7 @@ def main(folder: str, suffix=''):
     #     for sentence in punct_rem:
     #         sentence_pos_list = get_sentence_pos_list(sentence, nlp)
     #         sentence_pos_list = [x for x in sentence_pos_list if x != "SPACE"]
-    #         sentence_pos = " ".join(sentence_pos_list)
+    #         sentence_pos = " ".join(sentence_ pos_list)
     #         pos_list.append(sentence_pos)
     #     pos_resolved_sentence_list.append(pos_list)
     #     if (len(pos_list) != len(sentence_list)):

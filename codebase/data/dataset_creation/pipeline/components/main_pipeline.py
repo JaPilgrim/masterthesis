@@ -7,8 +7,8 @@ import pipe_4_postag
 import pipe_5_explode
 import pipe_6_posfilter
 
-article_list = '../../../data_files/pipeline_steps/protected_articles/0_protected_titles.csv'
-folder = '../../../data_files/pipeline_steps/protected_articles/'
+folder = '../../../data_files/pipeline_steps/random_articles/'
+article_list = f'{folder}0_random_titles.csv'
 suffix = ''
 nrows = None
 
@@ -24,3 +24,4 @@ pipe_5_explode.main(folder, suffix)
 print("Pipeline Step 5 finished!! ")
 pipe_6_posfilter.main(folder, suffix)
 print("Pipeline Step 6 finished!! ")
+
