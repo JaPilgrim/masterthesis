@@ -1,8 +1,9 @@
-"""To test & compare all 48 datasets in small samples. To be run with wandb agent.
+"""To test & compare all 144 datasets in small samples. To be run with wandb agent.
+    For this script to work, the repo "ROOT" fodler has to be added to sys.path.
     """
-import os
 import sys
-sys.path.append('/root/projects/jpthesis/keygens/masterthesis/codebase/')
+sys.path.append('RepoROOT')
+import os
 import numpy as np
 import pandas as pd
 import wandb
@@ -11,10 +12,6 @@ from sklearn.utils.class_weight import compute_class_weight
 from tensorflow import keras
 from tensorflow.keras import callbacks, layers
 import tensorflow as tf
-# physical_devices = tf.config.list_physical_devices('GPU')
-# tf.config.experimental.set_memory_growth(physical_devices[0], enable=True)
-# gpu_options = tf.GPUOptions(allow_growth=True)
-# session = tf.InteractiveSession(config=tf.ConfigProto(gpu_options=gpu_options))
 from utilities.lstm_data_handler import LSTMDataHandler
 from utilities.utils import *
 
@@ -38,13 +35,10 @@ sweep_configuration = {
     }
 }
 
-
-
 def main():
-    folder = '../data/data_files/test_samples/9th_last/'
+    folder = '../data/data_files/test_samples/25k_each/'
     run = wandb.init()
     fileindex = wandb.config.fileindex
-    # fileindex = 5
     file_names = os.listdir(folder)
 
     filename = file_names[fileindex]
