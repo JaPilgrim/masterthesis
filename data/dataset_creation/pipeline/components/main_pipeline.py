@@ -1,11 +1,13 @@
-"""For this script to work, the repo "ROOT" fodler has to be added to sys.path
+"""For this script to work, the repo_root variable has to be filled with the absolute path 
+to your local repo which will be added to sys.path.
 folder: the folder where the comutation (intermediate-) results are stored and fetched from
 article_list: file name of the article list (in that very folder)
 suffix: if the (intermediate-) fildes should be stored with a suffix
 nrows: if only certain number of tuop rows should be included
 """
+repo_root = ''
 import sys
-sys.path.append('RepoRoot')
+sys.path.append(repo_root)
 import pipe_1_fetch
 import pipe_2_split
 import pipe_3_resolve
